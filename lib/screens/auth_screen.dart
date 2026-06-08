@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import '../generated/assets.dart';
 import '../services/auth_service.dart';
+import '../core/api/dio_client.dart';
+import '../core/services/secure_storage_service.dart';
+import '../features/auth/data/datasources/auth_remote_data_source.dart';
+import '../features/auth/data/repositories/auth_repository_impl.dart';
+import '../features/auth/domain/usecases/register_use_case.dart';
+import '../features/auth/domain/usecases/login_use_case.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -14,12 +20,30 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   int _selectedIndex = 0;
+  bool _isLoading = false;
 
   // Form controllers
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
+
+  late final RegisterUseCase _registerUseCase;
+  late final LoginUseCase _loginUseCase;
+
+  @override
+  void initState() {
+    super.initState();
+    final secureStorageService = SecureStorageService();
+    final dioClient = DioClient(secureStorageService);
+    final remoteDataSource = AuthRemoteDataSourceImpl(dioClient.dio);
+    final repository = AuthRepositoryImpl(
+      remoteDataSource: remoteDataSource,
+      secureStorageService: secureStorageService,
+    );
+    _registerUseCase = RegisterUseCase(repository);
+    _loginUseCase = LoginUseCase(repository);
+  }
 
   @override
   void dispose() {
@@ -277,20 +301,24 @@ class _AuthScreenState extends State<AuthScreen> {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            onPressed: () {
-              // mark user as logged in and open main dashboard
-              selectedBottomNavIndex.value = 0; // Reset to Home tab
-              isLoggedIn.value = true;
-              Navigator.pushReplacementNamed(context, '/home');
-            },
-            child: const Text(
-              'Sign In',
-              style: TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
+            onPressed: _isLoading ? null : _signIn,
+            child: _isLoading
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      color: Colors.black,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text(
+                    'Sign In',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
           ),
         ),
         const SizedBox(height: 18),
@@ -351,6 +379,132 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> _signIn() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty) {
+      _showErrorSnackBar('Please enter your email address');
+      return;
+    }
+
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(email)) {
+      _showErrorSnackBar('Please enter a valid email address');
+      return;
+    }
+
+    if (password.isEmpty) {
+      _showErrorSnackBar('Please enter your password');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      await _loginUseCase(
+        email: email,
+        password: password,
+      );
+
+      if (mounted) {
+        selectedBottomNavIndex.value = 0; // Reset to Home tab
+        isLoggedIn.value = true;
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    } catch (e) {
+      if (mounted) {
+        var errorMsg = e.toString();
+        if (errorMsg.startsWith('Exception: ')) {
+          errorMsg = errorMsg.replaceFirst('Exception: ', '');
+        }
+        _showErrorSnackBar(errorMsg);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _signUp() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    if (name.isEmpty) {
+      _showErrorSnackBar('Please enter your full name');
+      return;
+    }
+
+    final parts = name.split(' ');
+    final firstName = parts.first;
+    final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : ' ';
+
+    if (email.isEmpty) {
+      _showErrorSnackBar('Please enter your email address');
+      return;
+    }
+
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(email)) {
+      _showErrorSnackBar('Please enter a valid email address');
+      return;
+    }
+
+    if (password.length < 6) {
+      _showErrorSnackBar('Password must be at least 6 characters');
+      return;
+    }
+
+    if (password != confirmPassword) {
+      _showErrorSnackBar('Passwords do not match');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      await _registerUseCase(
+        email: email,
+        password: password,
+        firstName: firstName,
+        lastName: lastName,
+      );
+
+      if (mounted) {
+        selectedBottomNavIndex.value = 0; // Reset to Home tab
+        isLoggedIn.value = true;
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    } catch (e) {
+      if (mounted) {
+        var errorMsg = e.toString();
+        if (errorMsg.startsWith('Exception: ')) {
+          errorMsg = errorMsg.replaceFirst('Exception: ', '');
+        }
+        _showErrorSnackBar(errorMsg);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.redAccent,
+      ),
     );
   }
 
@@ -494,20 +648,24 @@ class _AuthScreenState extends State<AuthScreen> {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            onPressed: () {
-              // mark user as logged in and open main dashboard
-              selectedBottomNavIndex.value = 0; // Reset to Home tab
-              isLoggedIn.value = true;
-              Navigator.pushReplacementNamed(context, '/home');
-            },
-            child: const Text(
-              'Sign Up',
-              style: TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
+            onPressed: _isLoading ? null : _signUp,
+            child: _isLoading
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      color: Colors.black,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text(
+                    'Sign Up',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
           ),
         ),
         const SizedBox(height: 18),

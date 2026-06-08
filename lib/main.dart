@@ -4,8 +4,10 @@ import 'screens/auth_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
 import 'screens/main_dashboard.dart';
-import 'screens/setup_screen.dart';
 import 'screens/pipeline_screen.dart';
+import 'features/cv_report/presentation/pages/cv_report_page.dart';
+import 'features/mcq_exam/presentation/pages/mcq_exam_page.dart';
+import 'features/hr_interview/presentation/pages/hr_interview_page.dart';
 import 'theme/app_theme.dart';
 
 void main() {
@@ -27,8 +29,10 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const AuthScreen(),
         '/signup': (context) => const AuthScreen(),
         '/home': (context) => const MainDashboard(),
-        '/setup': (context) => const SetupScreen(),
         '/pipeline': (context) => const PipelineScreen(),
+        '/cv-report': (context) => const CvReportPage(),
+        '/mcq-exam': (context) => const McqExamPage(),
+        '/hr-interview': (context) => const HrInterviewPage(),
       },
       debugShowCheckedModeBanner: false,
     );

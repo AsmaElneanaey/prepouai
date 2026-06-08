@@ -5,4 +5,3 @@ final ValueNotifier<bool> isLoggedIn = ValueNotifier<bool>(false);
 
 // Track selected bottom navigation bar index
 final ValueNotifier<int> selectedBottomNavIndex = ValueNotifier<int>(0);
-

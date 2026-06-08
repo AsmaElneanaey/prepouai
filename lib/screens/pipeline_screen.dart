@@ -392,12 +392,18 @@ class _PipelineScreenState extends State<PipelineScreen> {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
                             onPressed: () {
-                              // Analyze with AI action - for now, just show snackbar
                               if (_pickedFile == null) {
                                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please upload a CV first')));
                                 return;
                               }
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Analyzing ${_pickedFile!.name}...')));
+                              Navigator.pushNamed(
+                                context,
+                                '/cv-report',
+                                arguments: {
+                                  'fileName': _pickedFile!.name,
+                                  'fileSize': _pickedFile!.size,
+                                },
+                              );
                             },
                             child: const Text(
                               'Analyze With AI',

@@ -43,7 +43,7 @@ class CoachCard extends StatelessWidget {
               onPressed: () {
                 // Select Profile tab (index 1) in bottom nav and navigate to pipeline
                 selectedBottomNavIndex.value = 1;
-                Navigator.pushNamed(context, '/setup');
+                Navigator.pushNamed(context, '/pipeline');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF00D9A3),
