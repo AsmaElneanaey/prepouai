@@ -8,6 +8,8 @@ import 'screens/pipeline_screen.dart';
 import 'features/cv_report/presentation/pages/cv_report_page.dart';
 import 'features/mcq_exam/presentation/pages/mcq_exam_page.dart';
 import 'features/hr_interview/presentation/pages/hr_interview_page.dart';
+import 'features/tech_interview/presentation/pages/tech_interview_page.dart';
+import 'features/final_report/presentation/pages/final_report_page.dart';
 import 'theme/app_theme.dart';
 
 void main() {
@@ -33,6 +35,8 @@ class MyApp extends StatelessWidget {
         '/cv-report': (context) => const CvReportPage(),
         '/mcq-exam': (context) => const McqExamPage(),
         '/hr-interview': (context) => const HrInterviewPage(),
+        '/tech-interview': (context) => const TechInterviewPage(),
+        '/final-report': (context) => const FinalReportPage(),
       },
       debugShowCheckedModeBanner: false,
     );
