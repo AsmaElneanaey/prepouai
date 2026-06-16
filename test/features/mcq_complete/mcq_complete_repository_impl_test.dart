@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:prepouai/features/mcq_complete/data/repositories/mcq_complete_repository_impl.dart';
 import 'package:prepouai/features/mcq_exam/domain/entities/mcq_exam_session.dart';
-import 'package:prepouai/features/mcq_exam/domain/entities/mcq_question.dart';
 
 void main() {
   late McqCompleteRepositoryImpl repository;
@@ -66,13 +65,7 @@ void main() {
   test('calculateResult returns 80% and pass for 4 of 5 correct', () {
     final result = repository.calculateResult(
       session: buildSession(),
-      selectedAnswers: {
-        0: 'B',
-        1: 'A',
-        2: 'B',
-        3: 'A',
-        4: 'B',
-      },
+      selectedAnswers: {0: 'B', 1: 'A', 2: 'B', 3: 'A', 4: 'B'},
     );
 
     expect(result.scorePercent, 80);
@@ -89,8 +82,9 @@ void main() {
     expect(ts.correct, 1);
     expect(ts.total, 1);
 
-    final systemDesign =
-        result.topics.firstWhere((t) => t.name == 'System Design');
+    final systemDesign = result.topics.firstWhere(
+      (t) => t.name == 'System Design',
+    );
     expect(systemDesign.correct, 0);
     expect(systemDesign.total, 1);
   });

@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../theme/tech_interview_theme.dart';
 import '../bloc/tech_interview_bloc.dart';
 import '../bloc/tech_interview_event.dart';
-import '../bloc/tech_interview_state.dart';
 
 class CodeEditorCard extends StatefulWidget {
   const CodeEditorCard({
@@ -63,7 +62,9 @@ class _CodeEditorCardState extends State<CodeEditorCard> {
       decoration: BoxDecoration(
         color: TechInterviewTheme.cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: TechInterviewTheme.borderMuted.withValues(alpha: 0.8)),
+        border: Border.all(
+          color: TechInterviewTheme.borderMuted.withValues(alpha: 0.8),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -84,19 +85,28 @@ class _CodeEditorCardState extends State<CodeEditorCard> {
                     Container(
                       width: 10,
                       height: 10,
-                      decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFF85149)),
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xFFF85149),
+                      ),
                     ),
                     const SizedBox(width: 6),
                     Container(
                       width: 10,
                       height: 10,
-                      decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFFBBF24)),
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xFFFBBF24),
+                      ),
                     ),
                     const SizedBox(width: 6),
                     Container(
                       width: 10,
                       height: 10,
-                      decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFF00D9A3)),
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xFF00D9A3),
+                      ),
                     ),
                   ],
                 ),
@@ -111,12 +121,17 @@ class _CodeEditorCardState extends State<CodeEditorCard> {
                     ),
                     onChanged: (val) {
                       if (val != null) {
-                        context.read<TechInterviewBloc>().add(LanguageChanged(val));
+                        context.read<TechInterviewBloc>().add(
+                          LanguageChanged(val),
+                        );
                       }
                     },
                     items: const [
                       DropdownMenuItem(value: 'dart', child: Text('Dart')),
-                      DropdownMenuItem(value: 'javascript', child: Text('JavaScript')),
+                      DropdownMenuItem(
+                        value: 'javascript',
+                        child: Text('JavaScript'),
+                      ),
                       DropdownMenuItem(value: 'python', child: Text('Python')),
                     ],
                   ),
@@ -162,7 +177,10 @@ class _CodeEditorCardState extends State<CodeEditorCard> {
                 Expanded(
                   child: Container(
                     color: TechInterviewTheme.codeEditorBg,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     child: TextField(
                       controller: _codeController,
                       maxLines: null,
@@ -197,7 +215,11 @@ class _CodeEditorCardState extends State<CodeEditorCard> {
             ),
             child: const Row(
               children: [
-                Icon(Icons.terminal, color: TechInterviewTheme.terminalText, size: 14),
+                Icon(
+                  Icons.terminal,
+                  color: TechInterviewTheme.terminalText,
+                  size: 14,
+                ),
                 SizedBox(width: 8),
                 Text(
                   'CONSOLE OUTPUT',

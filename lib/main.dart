@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/splash_screen.dart';
 import 'screens/auth_screen.dart';
-import 'screens/login_screen.dart';
-import 'screens/signup_screen.dart';
 import 'screens/main_dashboard.dart';
 import 'screens/pipeline_screen.dart';
 import 'features/cv_report/presentation/pages/cv_report_page.dart';

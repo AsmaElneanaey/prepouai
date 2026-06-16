@@ -19,14 +19,15 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _isSignIn = true; // true for Sign In, false for Sign Up
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  int _selectedIndex = 0;
+  final int _selectedIndex = 0;
   bool _isLoading = false;
 
   // Form controllers
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   late final RegisterUseCase _registerUseCase;
   late final LoginUseCase _loginUseCase;
@@ -118,7 +119,10 @@ class _AuthScreenState extends State<AuthScreen> {
               // Auth Card
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 24,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF181E2A),
                   borderRadius: BorderRadius.circular(24),
@@ -196,7 +200,10 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                     const SizedBox(height: 24),
                     // Content based on selected tab
-                    if (_isSignIn) _buildSignInContent() else _buildSignUpContent(),
+                    if (_isSignIn)
+                      _buildSignInContent()
+                    else
+                      _buildSignUpContent(),
                   ],
                 ),
               ),
@@ -234,7 +241,10 @@ class _AuthScreenState extends State<AuthScreen> {
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide.none,
             ),
-            contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              vertical: 16,
+              horizontal: 16,
+            ),
           ),
         ),
         const SizedBox(height: 18),
@@ -277,7 +287,10 @@ class _AuthScreenState extends State<AuthScreen> {
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide.none,
             ),
-            contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              vertical: 16,
+              horizontal: 16,
+            ),
             suffixIcon: IconButton(
               icon: Icon(
                 _obscurePassword ? Icons.visibility_off : Icons.visibility,
@@ -326,26 +339,17 @@ class _AuthScreenState extends State<AuthScreen> {
         Row(
           children: [
             const Expanded(
-              child: Divider(
-                color: Color(0xFF232A3A),
-                thickness: 1,
-              ),
+              child: Divider(color: Color(0xFF232A3A), thickness: 1),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text(
                 'or continue with',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
               ),
             ),
             const Expanded(
-              child: Divider(
-                color: Color(0xFF232A3A),
-                thickness: 1,
-              ),
+              child: Divider(color: Color(0xFF232A3A), thickness: 1),
             ),
           ],
         ),
@@ -405,10 +409,7 @@ class _AuthScreenState extends State<AuthScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _loginUseCase(
-        email: email,
-        password: password,
-      );
+      await _loginUseCase(email: email, password: password);
 
       if (mounted) {
         selectedBottomNavIndex.value = 0; // Reset to Home tab
@@ -499,10 +500,7 @@ class _AuthScreenState extends State<AuthScreen> {
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(color: Colors.white),
-        ),
+        content: Text(message, style: const TextStyle(color: Colors.white)),
         backgroundColor: Colors.redAccent,
       ),
     );
@@ -534,7 +532,10 @@ class _AuthScreenState extends State<AuthScreen> {
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide.none,
             ),
-            contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              vertical: 16,
+              horizontal: 16,
+            ),
           ),
         ),
         const SizedBox(height: 18),
@@ -560,7 +561,10 @@ class _AuthScreenState extends State<AuthScreen> {
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide.none,
             ),
-            contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              vertical: 16,
+              horizontal: 16,
+            ),
           ),
         ),
         const SizedBox(height: 18),
@@ -587,7 +591,10 @@ class _AuthScreenState extends State<AuthScreen> {
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide.none,
             ),
-            contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              vertical: 16,
+              horizontal: 16,
+            ),
             suffixIcon: IconButton(
               icon: Icon(
                 _obscurePassword ? Icons.visibility_off : Icons.visibility,
@@ -623,15 +630,21 @@ class _AuthScreenState extends State<AuthScreen> {
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide.none,
             ),
-            contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              vertical: 16,
+              horizontal: 16,
+            ),
             suffixIcon: IconButton(
               icon: Icon(
-                _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                _obscureConfirmPassword
+                    ? Icons.visibility_off
+                    : Icons.visibility,
                 color: const Color(0xFF6B7687),
               ),
               onPressed: () {
-                setState(() =>
-                    _obscureConfirmPassword = !_obscureConfirmPassword);
+                setState(
+                  () => _obscureConfirmPassword = !_obscureConfirmPassword,
+                );
               },
             ),
           ),
@@ -673,26 +686,17 @@ class _AuthScreenState extends State<AuthScreen> {
         Row(
           children: [
             const Expanded(
-              child: Divider(
-                color: Color(0xFF232A3A),
-                thickness: 1,
-              ),
+              child: Divider(color: Color(0xFF232A3A), thickness: 1),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text(
                 'or continue with',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
               ),
             ),
             const Expanded(
-              child: Divider(
-                color: Color(0xFF232A3A),
-                thickness: 1,
-              ),
+              child: Divider(color: Color(0xFF232A3A), thickness: 1),
             ),
           ],
         ),
@@ -729,4 +733,3 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 }
-
