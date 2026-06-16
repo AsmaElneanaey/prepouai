@@ -8,6 +8,8 @@ import '../models/login_response_dto.dart';
 abstract class AuthRemoteDataSource {
   Future<RegisterResponseDto> register(RegisterRequestDto request);
   Future<LoginResponseDto> login(LoginRequestDto request);
+  Future<LoginResponseDto> refreshToken(String refreshToken);
+  Future<LoginResponseDto> oauthCallback(Map<String, dynamic> oauthData);
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -46,6 +48,56 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final response = await _dio.post(
         ApiEndpoints.login,
         data: request.toJson(),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return LoginResponseDto.fromJson(response.data as Map<String, dynamic>);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+        );
+      }
+    } on DioException catch (e) {
+      final message = _parseErrorMessage(e);
+      throw Exception(message);
+    } catch (e) {
+      throw Exception('An unexpected error occurred: $e');
+    }
+  }
+
+  @override
+  Future<LoginResponseDto> refreshToken(String refreshToken) async {
+    try {
+      final response = await _dio.post(
+        ApiEndpoints.refresh,
+        data: {'refresh_token': refreshToken},
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return LoginResponseDto.fromJson(response.data as Map<String, dynamic>);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+        );
+      }
+    } on DioException catch (e) {
+      final message = _parseErrorMessage(e);
+      throw Exception(message);
+    } catch (e) {
+      throw Exception('An unexpected error occurred: $e');
+    }
+  }
+
+  @override
+  Future<LoginResponseDto> oauthCallback(Map<String, dynamic> oauthData) async {
+    try {
+      final response = await _dio.post(
+        ApiEndpoints.oauthCallback,
+        data: oauthData,
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {

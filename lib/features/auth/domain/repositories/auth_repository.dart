@@ -12,4 +12,7 @@ abstract class AuthRepository {
     required String email,
     required String password,
   });
+
+  Future<User> refreshToken(String refreshToken);
+  Future<User> oauthCallback(Map<String, dynamic> oauthData);
 }

@@ -39,7 +39,9 @@ class TechVoiceControlsBar extends StatelessWidget {
                 color: Colors.white,
                 size: 20,
               ),
-              onTap: () => Navigator.of(context).maybePop(),
+              onTap: () {
+                Navigator.of(context).pushReplacementNamed('/final-report');
+              },
             ),
 
             // Mic toggle

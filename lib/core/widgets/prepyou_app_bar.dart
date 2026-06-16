@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../features/cv_report/presentation/theme/cv_report_theme.dart';
+import 'user_avatar.dart';
+
 
 class PrepYouAppBar extends StatelessWidget implements PreferredSizeWidget {
   const PrepYouAppBar({
@@ -91,30 +93,9 @@ class PrepYouAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
         ),
         const SizedBox(width: 8),
-        Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: Container(
-            width: 32,
-            height: 32,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [CvReportTheme.primaryGreen, CvReportTheme.skillBlue],
-              ),
-            ),
-            child: const Center(
-              child: Text(
-                'A',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-          ),
+        const Padding(
+          padding: EdgeInsets.only(right: 16),
+          child: UserAvatar(size: 32),
         ),
       ],
     );

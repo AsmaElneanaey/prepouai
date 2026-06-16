@@ -1,5 +1,9 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import '../generated/assets.dart';
+import '../services/auth_service.dart';
+import '../features/auth/domain/entities/user.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -11,6 +15,45 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+
+  // Profile picture/avatar state
+  Uint8List? _selectedProfileBytes;
+  String? _selectedPresetAvatarUrl;
+
+  final List<String> _presetAvatars = [
+    'https://api.dicebear.com/7.x/bottts/png?seed=Felix&backgroundColor=0f1419,00d9a3',
+    'https://api.dicebear.com/7.x/bottts/png?seed=Aneka&backgroundColor=0f1419,ff9500',
+    'https://api.dicebear.com/7.x/bottts/png?seed=Jack&backgroundColor=0f1419,0a66c2',
+    'https://api.dicebear.com/7.x/bottts/png?seed=Cody&backgroundColor=0f1419,e50914',
+    'https://api.dicebear.com/7.x/bottts/png?seed=Buster&backgroundColor=0f1419,7b2cb7',
+  ];
+
+  final TextEditingController _nameController = TextEditingController();
+
+  Future<void> _pickProfilePicture() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        withData: true,
+      );
+      if (result != null && result.files.first.bytes != null) {
+        setState(() {
+          _selectedProfileBytes = result.files.first.bytes;
+          _selectedPresetAvatarUrl = null;
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error picking profile picture: $e')),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -102,6 +145,145 @@ class _SignupScreenState extends State<SignupScreen> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 24),
+                    // Profile Avatar Selection
+                    Center(
+                      child: Column(
+                        children: [
+                          Stack(
+                            alignment: Alignment.bottomRight,
+                            children: [
+                              Container(
+                                width: 76,
+                                height: 76,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: const Color(0xFF10141B),
+                                  border: Border.all(
+                                    color: const Color(0xFF00D9A3),
+                                    width: 2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF00D9A3).withOpacity(0.2),
+                                      blurRadius: 12,
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                                padding: const EdgeInsets.all(2),
+                                child: ClipOval(
+                                  child: _selectedProfileBytes != null
+                                      ? Image.memory(
+                                          _selectedProfileBytes!,
+                                          fit: BoxFit.cover,
+                                        )
+                                      : _selectedPresetAvatarUrl != null
+                                          ? Image.network(
+                                              _selectedPresetAvatarUrl!,
+                                              fit: BoxFit.contain,
+                                            )
+                                          : const Center(
+                                              child: Icon(
+                                                Icons.person_rounded,
+                                                color: Color(0xFF6B7687),
+                                                size: 40,
+                                              ),
+                                            ),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: _pickProfilePicture,
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF00D9A3),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.camera_alt_rounded,
+                                    color: Colors.black,
+                                    size: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Choose an avatar or upload photo',
+                            style: TextStyle(
+                              color: Color(0xFF6B7687),
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          // Preset Avatar Row
+                          SizedBox(
+                            height: 48,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              shrinkWrap: true,
+                              itemCount: _presetAvatars.length + 1,
+                              itemBuilder: (context, index) {
+                                if (index == 0) {
+                                  // Custom Upload button
+                                  return GestureDetector(
+                                    onTap: _pickProfilePicture,
+                                    child: Container(
+                                      width: 40,
+                                      height: 40,
+                                      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: const Color(0xFF232A3A),
+                                          style: BorderStyle.solid,
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: const Icon(
+                                        Icons.upload_rounded,
+                                        color: Color(0xFF00D9A3),
+                                        size: 16,
+                                      ),
+                                    ),
+                                  );
+                                }
+                                final url = _presetAvatars[index - 1];
+                                final isSelected = _selectedPresetAvatarUrl == url && _selectedProfileBytes == null;
+                                return GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedPresetAvatarUrl = url;
+                                      _selectedProfileBytes = null;
+                                    });
+                                  },
+                                  child: Container(
+                                    width: 40,
+                                    height: 40,
+                                    margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: isSelected ? const Color(0xFF00D9A3) : Colors.transparent,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: ClipOval(
+                                      child: Image.network(
+                                        url,
+                                        fit: BoxFit.contain,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
                     // Full Name
                     const Text(
                       'Full Name',
@@ -113,6 +295,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                     const SizedBox(height: 8),
                     TextField(
+                      controller: _nameController,
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         filled: true,
@@ -238,6 +421,29 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                         ),
                         onPressed: () {
+                          // Save state
+                          final name = _nameController.text.trim();
+                          final parts = name.split(' ');
+                          final firstName = parts.isNotEmpty ? parts.first : 'A';
+                          
+                          userProfileImageBytes.value = _selectedProfileBytes;
+                          userPresetAvatar.value = _selectedPresetAvatarUrl;
+                          currentUser.value = User(
+                            id: 'mock_id',
+                            email: 'user@example.com',
+                            firstName: firstName,
+                            lastName: parts.length > 1 ? parts.sublist(1).join(' ') : ' ',
+                            role: 'candidate',
+                            totalCredits: 10,
+                            currentStreakDays: 1,
+                            longestStreakDays: 1,
+                            isActive: true,
+                            memberSince: 'Today',
+                            lastActive: 'Now',
+                            createdAt: 'Now',
+                            updatedAt: 'Now',
+                          );
+                          isLoggedIn.value = true;
                           // Navigate to home after signup
                           Navigator.pushReplacementNamed(context, '/home');
                         },

@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/widgets/app_bottom_nav.dart';
 import '../../../../core/widgets/prepyou_app_bar.dart';
+import '../../../../core/api/dio_client.dart';
+import '../../../../core/services/secure_storage_service.dart';
 import '../../../mcq_complete/data/repositories/mcq_complete_repository_impl.dart';
 import '../../../mcq_complete/domain/usecases/calculate_mcq_result.dart';
 import '../../../mcq_complete/presentation/widgets/mcq_complete_sheet.dart';
@@ -24,7 +26,9 @@ class McqExamPage extends StatelessWidget {
   const McqExamPage({super.key});
 
   static McqExamBloc _createBloc() {
-    final examDataSource = McqExamRemoteDataSourceImpl();
+    final secureStorageService = SecureStorageService();
+    final dioClient = DioClient(secureStorageService);
+    final examDataSource = McqExamRemoteDataSourceImpl(dioClient.dio);
     final examRepository = McqExamRepositoryImpl(examDataSource);
     final getMcqExam = GetMcqExamUseCase(examRepository);
     final calculateResult =

@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/widgets/app_bottom_nav.dart';
 import '../../../../core/widgets/prepyou_app_bar.dart';
+import '../../../../core/api/dio_client.dart';
+import '../../../../core/services/secure_storage_service.dart';
 import '../../data/datasources/cv_report_remote_data_source.dart';
 import '../../data/repositories/cv_report_repository_impl.dart';
 import '../../domain/usecases/get_cv_report.dart';
@@ -22,7 +24,9 @@ class CvReportPage extends StatelessWidget {
   const CvReportPage({super.key});
 
   static CvReportBloc _createBloc() {
-    final dataSource = CvReportRemoteDataSourceImpl();
+    final secureStorageService = SecureStorageService();
+    final dioClient = DioClient(secureStorageService);
+    final dataSource = CvReportRemoteDataSourceImpl(dioClient.dio);
     final repository = CvReportRepositoryImpl(dataSource);
     final useCase = GetCvReportUseCase(repository);
     return CvReportBloc(useCase);

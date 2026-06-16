@@ -17,4 +17,14 @@ class TechInterviewRepositoryImpl implements TechInterviewRepository {
   Future<String> submitCode(String code, String language) async {
     return _remoteDataSource.submitCode(code, language);
   }
+
+  @override
+  Future<void> startTechInterviewStage(String id) async {
+    await _remoteDataSource.startTechStage(id);
+  }
+
+  @override
+  Future<void> completeTechInterviewStage(String id) async {
+    await _remoteDataSource.completeTechStage(id);
+  }
 }

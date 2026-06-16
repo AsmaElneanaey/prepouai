@@ -6,5 +6,5 @@ class GetFinalReportUseCase {
 
   final FinalReportRepository _repository;
 
-  Future<FinalReport> call() => _repository.getFinalReport();
+  Future<FinalReport> call([String id = 'active']) => _repository.getFinalReport(id);
 }

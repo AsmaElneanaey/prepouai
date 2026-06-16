@@ -56,4 +56,26 @@ class AuthRepositoryImpl implements AuthRepository {
 
     return response.user.toEntity();
   }
+
+  @override
+  Future<User> refreshToken(String refreshToken) async {
+    final response = await _remoteDataSource.refreshToken(refreshToken);
+
+    // Save tokens securely
+    await _secureStorageService.saveAccessToken(response.accessToken);
+    await _secureStorageService.saveRefreshToken(response.refreshToken);
+
+    return response.user.toEntity();
+  }
+
+  @override
+  Future<User> oauthCallback(Map<String, dynamic> oauthData) async {
+    final response = await _remoteDataSource.oauthCallback(oauthData);
+
+    // Save tokens securely
+    await _secureStorageService.saveAccessToken(response.accessToken);
+    await _secureStorageService.saveRefreshToken(response.refreshToken);
+
+    return response.user.toEntity();
+  }
 }

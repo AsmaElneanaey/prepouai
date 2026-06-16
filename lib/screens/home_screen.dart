@@ -5,6 +5,8 @@ import '../widgets/progress_section.dart';
 import '../widgets/quick_access_section.dart';
 import '../widgets/interview_list_section.dart';
 import '../widgets/credits_section.dart';
+import '../core/widgets/user_avatar.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -85,26 +87,9 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.notifications_outlined, color: Color(0xFF6B7687)),
             onPressed: () {},
           ),
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFB800),
-                borderRadius: BorderRadius.circular(50),
-              ),
-              child: const Center(
-                child: Text(
-                  'A',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ),
+          const Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: UserAvatar(size: 36),
           ),
         ],
       ),

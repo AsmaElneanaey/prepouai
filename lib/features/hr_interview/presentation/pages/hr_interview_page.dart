@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/widgets/app_bottom_nav.dart';
 import '../../../../core/widgets/prepyou_app_bar.dart';
+import '../../../../core/api/dio_client.dart';
+import '../../../../core/services/secure_storage_service.dart';
 import '../../data/datasources/hr_interview_remote_data_source.dart';
 import '../../data/repositories/hr_interview_repository_impl.dart';
 import '../../domain/usecases/get_hr_interview.dart';
@@ -18,7 +20,9 @@ class HrInterviewPage extends StatelessWidget {
   const HrInterviewPage({super.key});
 
   static HrInterviewBloc _createBloc() {
-    final ds = HrInterviewRemoteDataSourceImpl();
+    final secureStorageService = SecureStorageService();
+    final dioClient = DioClient(secureStorageService);
+    final ds = HrInterviewRemoteDataSourceImpl(dioClient.dio);
     final repo = HrInterviewRepositoryImpl(ds);
     return HrInterviewBloc(GetHrInterviewUseCase(repo));
   }

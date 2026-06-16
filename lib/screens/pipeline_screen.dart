@@ -4,6 +4,14 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'package:file_picker/file_picker.dart';
 
+import '../core/api/dio_client.dart';
+import '../core/services/secure_storage_service.dart';
+import '../features/interview_session/data/datasources/session_remote_data_source.dart';
+import '../features/interview_session/data/repositories/session_repository_impl.dart';
+import '../features/interview_session/domain/usecases/create_session_use_case.dart';
+import '../core/widgets/user_avatar.dart';
+
+
 class PipelineScreen extends StatefulWidget {
   const PipelineScreen({super.key});
 
@@ -20,11 +28,93 @@ class _PipelineScreenState extends State<PipelineScreen> {
   String? _selectedCompany;
   PlatformFile? _pickedFile;
 
+  bool _isCreatingSession = false;
+  late final CreateSessionUseCase _createSessionUseCase;
+
   @override
   void initState() {
     super.initState();
     _bottomNavIndex = selectedBottomNavIndex.value;
     selectedBottomNavIndex.addListener(_onBottomNavIndexChanged);
+
+    final secureStorageService = SecureStorageService();
+    final dioClient = DioClient(secureStorageService);
+    final remoteDataSource = SessionRemoteDataSourceImpl(dioClient.dio);
+    final repository = SessionRepositoryImpl(remoteDataSource);
+    _createSessionUseCase = CreateSessionUseCase(repository);
+  }
+
+  String _getCompanyId(String companyName) {
+    switch (companyName.toLowerCase()) {
+      case 'google':
+        return '65f199887766554433221100';
+      case 'meta':
+        return '65f199887766554433221101';
+      case 'amazon':
+        return '65f199887766554433221102';
+      case 'apple':
+        return '65f199887766554433221103';
+      case 'netflix':
+        return '65f199887766554433221104';
+      default:
+        return '65f199887766554433221100'; // Default fallback (Google)
+    }
+  }
+
+  Future<void> _createSession() async {
+    if (_selectedRole == null ||
+        _selectedSeniority == null ||
+        _selectedCompany == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a target role, seniority, and company first.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isCreatingSession = true;
+    });
+
+    try {
+      final companyId = _getCompanyId(_selectedCompany!);
+      await _createSessionUseCase(
+        targetRole: _selectedRole!,
+        seniorityLevel: _selectedSeniority!,
+        targetCompanyId: companyId,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Interview session created successfully!'),
+            backgroundColor: Color(0xFF00D9A3),
+          ),
+        );
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    } catch (e) {
+      if (mounted) {
+        var errorMsg = e.toString();
+        if (errorMsg.startsWith('Exception: ')) {
+          errorMsg = errorMsg.replaceFirst('Exception: ', '');
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to create session: $errorMsg'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCreatingSession = false;
+        });
+      }
+    }
   }
 
   @override
@@ -89,26 +179,9 @@ class _PipelineScreenState extends State<PipelineScreen> {
             icon: const Icon(Icons.notifications_outlined, color: Color(0xFF6B7687)),
             onPressed: () {},
           ),
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFB800),
-                borderRadius: BorderRadius.circular(50),
-              ),
-              child: const Center(
-                child: Text(
-                  'A',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ),
+          const Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: UserAvatar(size: 36),
           ),
         ],
       ),
@@ -271,29 +344,35 @@ class _PipelineScreenState extends State<PipelineScreen> {
                       ),
                       elevation: 4,
                     ),
-                    onPressed: () {
-                      // Begin interview pipeline
-                      Navigator.pushNamed(context, '/home');
-                    },
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Begin Interview Pipeline',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                    onPressed: _isCreatingSession ? null : _createSession,
+                    child: _isCreatingSession
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.black,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Begin Interview Pipeline',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Icon(
+                                Icons.arrow_forward_rounded,
+                                color: Colors.black,
+                                size: 20,
+                              ),
+                            ],
                           ),
-                        ),
-                        SizedBox(width: 8),
-                        Icon(
-                          Icons.arrow_forward_rounded,
-                          color: Colors.black,
-                          size: 20,
-                        ),
-                      ],
-                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -635,6 +714,7 @@ class _PipelineScreenState extends State<PipelineScreen> {
         allowedExtensions: ['pdf', 'doc', 'docx'],
         withData: true,
       );
+      if (!mounted) return;
       if (result == null) return; // user canceled
       final file = result.files.first;
       const maxBytes = 5 * 1024 * 1024; // 5MB
@@ -647,6 +727,7 @@ class _PipelineScreenState extends State<PipelineScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Selected: ${file.name}')));
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error picking file: $e')));
     }
   }

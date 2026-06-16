@@ -5,6 +5,8 @@ import 'dart:ui';
 
 import '../../../../core/widgets/app_bottom_nav.dart';
 import '../../../../core/widgets/prepyou_app_bar.dart';
+import '../../../../core/api/dio_client.dart';
+import '../../../../core/services/secure_storage_service.dart';
 import '../../../../services/auth_service.dart';
 import '../../data/datasources/final_report_remote_data_source.dart';
 import '../../data/repositories/final_report_repository_impl.dart';
@@ -23,7 +25,9 @@ class FinalReportPage extends StatelessWidget {
   const FinalReportPage({super.key});
 
   static FinalReportBloc _createBloc() {
-    final ds = FinalReportRemoteDataSourceImpl();
+    final secureStorageService = SecureStorageService();
+    final dioClient = DioClient(secureStorageService);
+    final ds = FinalReportRemoteDataSourceImpl(dioClient.dio);
     final repo = FinalReportRepositoryImpl(ds);
     return FinalReportBloc(GetFinalReportUseCase(repo));
   }

@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/widgets/app_bottom_nav.dart';
 import '../../../../core/widgets/prepyou_app_bar.dart';
+import '../../../../core/api/dio_client.dart';
+import '../../../../core/services/secure_storage_service.dart';
 import '../../data/datasources/tech_interview_remote_data_source.dart';
 import '../../data/repositories/tech_interview_repository_impl.dart';
 import '../../domain/usecases/get_tech_interview.dart';
@@ -15,12 +17,15 @@ import '../widgets/code_editor_card.dart';
 import '../widgets/tech_chat_panel.dart';
 import '../widgets/tech_interviewer_header.dart';
 import '../widgets/tech_voice_controls_bar.dart';
+import '../widgets/tech_complete_sheet.dart';
 
 class TechInterviewPage extends StatelessWidget {
   const TechInterviewPage({super.key});
 
   static TechInterviewBloc _createBloc() {
-    final ds = TechInterviewRemoteDataSourceImpl();
+    final secureStorageService = SecureStorageService();
+    final dioClient = DioClient(secureStorageService);
+    final ds = TechInterviewRemoteDataSourceImpl(dioClient.dio);
     final repo = TechInterviewRepositoryImpl(ds);
     return TechInterviewBloc(
       GetTechInterviewUseCase(repo),
@@ -172,7 +177,18 @@ class _TechInterviewViewState extends State<_TechInterviewView>
     return Scaffold(
       backgroundColor: TechInterviewTheme.pageBg,
       appBar: const PrepYouAppBar(title: 'Technical Round', showBack: true),
-      body: BlocBuilder<TechInterviewBloc, TechInterviewState>(
+      body: BlocConsumer<TechInterviewBloc, TechInterviewState>(
+        listenWhen: (previous, current) {
+          if (previous is TechInterviewLoaded && current is TechInterviewLoaded) {
+            return !previous.isSuccess && current.isSuccess;
+          }
+          return false;
+        },
+        listener: (context, state) {
+          if (state is TechInterviewLoaded && state.isSuccess) {
+            TechCompleteSheet.show(context);
+          }
+        },
         builder: (context, state) {
           if (state is TechInterviewLoading || state is TechInterviewInitial) {
             return const Center(
