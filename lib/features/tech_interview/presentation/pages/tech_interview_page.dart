@@ -9,6 +9,8 @@ import '../../data/datasources/tech_interview_remote_data_source.dart';
 import '../../data/repositories/tech_interview_repository_impl.dart';
 import '../../domain/usecases/get_tech_interview.dart';
 import '../../domain/usecases/submit_code.dart';
+import '../../domain/usecases/complete_tech_interview_stage_use_case.dart';
+import '../../domain/usecases/send_tech_chat_message_use_case.dart';
 import '../bloc/tech_interview_bloc.dart';
 import '../bloc/tech_interview_event.dart';
 import '../bloc/tech_interview_state.dart';
@@ -30,6 +32,8 @@ class TechInterviewPage extends StatelessWidget {
     return TechInterviewBloc(
       GetTechInterviewUseCase(repo),
       SubmitCodeUseCase(repo),
+      CompleteTechInterviewStageUseCase(repo),
+      SendTechChatMessageUseCase(repo),
     );
   }
 

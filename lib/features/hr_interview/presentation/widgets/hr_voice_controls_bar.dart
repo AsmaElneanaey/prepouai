@@ -4,7 +4,9 @@ import '../theme/hr_interview_theme.dart';
 import 'hr_complete_sheet.dart';
 
 class HrVoiceControlsBar extends StatelessWidget {
-  const HrVoiceControlsBar({super.key});
+  const HrVoiceControlsBar({super.key, this.onMicTap});
+
+  final VoidCallback? onMicTap;
 
   @override
   Widget build(BuildContext context) {
@@ -42,12 +44,12 @@ class HrVoiceControlsBar extends StatelessWidget {
                 color: HrInterviewTheme.accentGreen.withValues(alpha: 0.2),
                 blurRadius: 16,
               ),
+              onTap: onMicTap ?? () {},
               child: Icon(
                 Icons.mic_rounded,
                 color: HrInterviewTheme.accentGreen,
                 size: 22,
               ),
-              onTap: () {},
             ),
             _mutedIconButton(Icons.volume_up_rounded),
             _mutedIconButton(Icons.chat_bubble_outline_rounded),

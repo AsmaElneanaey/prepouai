@@ -10,3 +10,12 @@ abstract class HrInterviewEvent extends Equatable {
 class HrInterviewRequested extends HrInterviewEvent {
   const HrInterviewRequested();
 }
+
+class HrResponseSubmitted extends HrInterviewEvent {
+  const HrResponseSubmitted(this.responseText);
+
+  final String responseText;
+
+  @override
+  List<Object?> get props => [responseText];
+}

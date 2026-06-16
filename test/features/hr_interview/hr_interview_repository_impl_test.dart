@@ -21,6 +21,7 @@ class FakeHrInterviewRemoteDataSource implements HrInterviewRemoteDataSource {
       throw Exception('Server error');
     }
     return HrInterviewSessionModel(
+      stageId: 'stage-123',
       headerTimerLabel: '0:02',
       interviewerName: 'PrepYou AI',
       interviewerRole: 'HR Interviewer',
@@ -43,6 +44,13 @@ class FakeHrInterviewRemoteDataSource implements HrInterviewRemoteDataSource {
     return StartHrResponseDto.fromJson(const {
       'success': true,
       'message': 'HR stage started successfully',
+      'data': {
+        'question': 'Tell me about yourself.',
+        'hrStage': {
+          'id': 'stage-123',
+          'stage_id': 'session-123',
+        }
+      }
     });
   }
 
@@ -59,18 +67,12 @@ class FakeHrInterviewRemoteDataSource implements HrInterviewRemoteDataSource {
       'success': true,
       'message': 'Response submitted successfully',
       'data': {
-        'user_message': {
-          'sender': 'user',
-          'body': responseText,
-          'timestamp': '0:32',
-        },
-        'ai_reply_message': {
-          'sender': 'ai',
-          'body': 'Thank you for your response.',
-          'timestamp': '1:05',
-        }
+        'completed': false,
+        'question': 'Thank you for your response.',
+        'current_question_number': 2,
+        'total_questions': 5,
       }
-    });
+    }, responseText);
   }
 
   @override

@@ -6,8 +6,9 @@ import '../models/tech_stage_models.dart';
 abstract class TechInterviewRemoteDataSource {
   Future<TechInterviewSessionModel> fetchActiveSession();
   Future<String> submitCode(String code, String language);
-  Future<TechStageResponseDto> startTechStage(String id);
-  Future<TechStageResponseDto> completeTechStage(String id);
+  Future<StartTechResponseDto> startTechStage(String id);
+  Future<CompleteTechResponseDto> completeTechStage(String id);
+  Future<String> sendChatMessage({required String id, required String message});
 }
 
 class TechInterviewRemoteDataSourceImpl implements TechInterviewRemoteDataSource {
@@ -17,48 +18,74 @@ class TechInterviewRemoteDataSourceImpl implements TechInterviewRemoteDataSource
 
   @override
   Future<TechInterviewSessionModel> fetchActiveSession() async {
-    await Future<void>.delayed(const Duration(milliseconds: 300));
-    return TechInterviewSessionModel(
-      headerTimerLabel: '0:15',
-      interviewerName: 'PrepYou AI Code Coach',
-      interviewerRole: 'Technical Interviewer',
-      questionTitle: 'Two Sum',
-      questionDifficulty: 'easy',
-      questionLanguage: 'dart',
-      questionDescription: '''
-Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`.
+    try {
+      final sessionsResponse = await _dio.get(ApiEndpoints.createSession);
+      if (sessionsResponse.statusCode != 200) {
+        throw Exception('Failed to load user interview sessions');
+      }
 
-You may assume that each input would have exactly one solution, and you may not use the same element twice.
+      final data = sessionsResponse.data;
+      if (data is! Map) {
+        throw Exception('Unexpected session response format');
+      }
 
-You can return the answer in any order.
+      final sessions = data['data'] as List<dynamic>? ?? const [];
+      if (sessions.isEmpty) {
+        throw Exception('No interview sessions found. Please set up a pipeline first.');
+      }
 
-### Example 1:
-```
-Input: nums = [2,7,11,15], target = 9
-Output: [0,1]
-Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].
-```
+      final latestSession = sessions.firstWhere(
+        (s) => s is Map && s['status'] == 'active',
+        orElse: () => sessions.first,
+      ) as Map?;
 
-### Constraints:
-* `2 <= nums.length <= 10^4`
-* `-10^9 <= nums[i] <= 10^9`
-* `-10^9 <= target <= 10^9`
-''',
-      questionStarterCode: '''
-List<int> twoSum(List<int> nums, int target) {
-  // Write your code here
-  return [];
-}
-''',
-      messages: const [
-        {
-          'sender': 'ai',
-          'body':
-              "Welcome to the technical round. Let's solve the 'Two Sum' problem today. You can code in Dart on the right panel. Let me know if you have any questions before starting.",
-          'timestamp': '0:00',
-        },
-      ],
-    );
+      if (latestSession == null) {
+        throw Exception('Could not find active session.');
+      }
+
+      final stages = latestSession['stages'] as List?;
+      if (stages == null) {
+        throw Exception('No stages found in active session.');
+      }
+
+      final techStage = stages.firstWhere(
+        (s) => s is Map && s['stage_type'] == 'tech_interview',
+        orElse: () => throw Exception('Could not find a Tech stage in the active session.'),
+      ) as Map;
+
+      final techStageId = techStage['_id'] as String? ?? techStage['id'] as String?;
+      if (techStageId == null || techStageId.isEmpty) {
+        throw Exception('Invalid Tech stage ID.');
+      }
+
+      // Start/Retrieve the Technical interview stage problem
+      final startDto = await startTechStage(techStageId);
+
+      return TechInterviewSessionModel(
+        stageId: techStageId,
+        headerTimerLabel: '0:15',
+        interviewerName: 'PrepYou AI Code Coach',
+        interviewerRole: 'Technical Interviewer',
+        questionTitle: startDto.problemTitle,
+        questionDescription: startDto.problemDescription,
+        questionDifficulty: startDto.problemDifficulty,
+        questionStarterCode: startDto.problemStarterCode,
+        questionLanguage: startDto.problemLanguage,
+        messages: [
+          {
+            'sender': 'ai',
+            'body':
+                "Welcome to the technical round. Let's solve the '${startDto.problemTitle}' problem today. You can write your solution in the workspace. Let me know if you have any questions before starting.",
+            'timestamp': '0:00',
+          },
+        ],
+      );
+    } on DioException catch (e) {
+      final message = _parseErrorMessage(e);
+      throw Exception(message);
+    } catch (e) {
+      throw Exception('An unexpected error occurred: $e');
+    }
   }
 
   @override
@@ -94,14 +121,14 @@ Your code is fully optimized. Click continue to finish the interview pipeline!
   }
 
   @override
-  Future<TechStageResponseDto> startTechStage(String id) async {
+  Future<StartTechResponseDto> startTechStage(String id) async {
     try {
       final response = await _dio.post(
         '${ApiEndpoints.techInterviewStage}/$id/start',
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return TechStageResponseDto.fromJson(
+        return StartTechResponseDto.fromJson(
           response.data as Map<String, dynamic>,
         );
       } else {
@@ -120,16 +147,45 @@ Your code is fully optimized. Click continue to finish the interview pipeline!
   }
 
   @override
-  Future<TechStageResponseDto> completeTechStage(String id) async {
+  Future<CompleteTechResponseDto> completeTechStage(String id) async {
     try {
       final response = await _dio.post(
         '${ApiEndpoints.techInterviewStage}/$id/complete',
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return TechStageResponseDto.fromJson(
+        return CompleteTechResponseDto.fromJson(
           response.data as Map<String, dynamic>,
         );
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+        );
+      }
+    } on DioException catch (e) {
+      final message = _parseErrorMessage(e);
+      throw Exception(message);
+    } catch (e) {
+      throw Exception('An unexpected error occurred: $e');
+    }
+  }
+
+  @override
+  Future<String> sendChatMessage({required String id, required String message}) async {
+    try {
+      final response = await _dio.post(
+        '${ApiEndpoints.techInterviewStage}/$id/chat',
+        data: {
+          'message': message,
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = response.data as Map<String, dynamic>;
+        final innerData = data['data'] as Map<String, dynamic>? ?? const {};
+        return innerData['response'] as String? ?? '';
       } else {
         throw DioException(
           requestOptions: response.requestOptions,

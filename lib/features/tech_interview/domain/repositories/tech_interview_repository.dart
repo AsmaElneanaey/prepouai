@@ -5,4 +5,5 @@ abstract class TechInterviewRepository {
   Future<String> submitCode(String code, String language);
   Future<void> startTechInterviewStage(String id);
   Future<void> completeTechInterviewStage(String id);
+  Future<String> sendChatMessage({required String id, required String message});
 }

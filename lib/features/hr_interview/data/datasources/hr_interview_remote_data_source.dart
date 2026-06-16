@@ -24,33 +24,79 @@ class HrInterviewRemoteDataSourceImpl implements HrInterviewRemoteDataSource {
 
   @override
   Future<HrInterviewSessionModel> fetchActiveSession() async {
-    await Future<void>.delayed(const Duration(milliseconds: 320));
-    return HrInterviewSessionModel(
-      headerTimerLabel: '0:02',
-      interviewerName: 'PrepYou AI',
-      interviewerRole: 'HR Interviewer',
-      liveQuestionCue: '"Tell me about yourself."',
-      messages: const [
-        {
-          'sender': 'ai',
-          'body':
-              "Hello! I'm your PrepYou AI HR Interviewer. Let's start with a classic — tell me about yourself and your background.",
-          'timestamp': '0:00',
-        },
-        {
-          'sender': 'user',
-          'body':
-              "Hi! I'm a Senior Frontend Engineer with 5 years of experience building scalable web applications...",
-          'timestamp': '0:32',
-        },
-        {
-          'sender': 'ai',
-          'body':
-              'Great background! Can you walk me through a challenging project you led and what the outcome was?',
-          'timestamp': '1:05',
-        },
-      ],
-    );
+    try {
+      final sessionsResponse = await _dio.get(ApiEndpoints.createSession);
+      if (sessionsResponse.statusCode != 200) {
+        throw Exception('Failed to load user interview sessions');
+      }
+
+      final data = sessionsResponse.data;
+      if (data is! Map) {
+        throw Exception('Unexpected session response format');
+      }
+
+      final sessions = data['data'] as List<dynamic>? ?? const [];
+      if (sessions.isEmpty) {
+        throw Exception('No interview sessions found. Please set up a pipeline first.');
+      }
+
+      final latestSession = sessions.firstWhere(
+        (s) => s is Map && s['status'] == 'active',
+        orElse: () => sessions.first,
+      ) as Map?;
+
+      if (latestSession == null) {
+        throw Exception('Could not find active session.');
+      }
+
+      final stages = latestSession['stages'] as List?;
+      if (stages == null) {
+        throw Exception('No stages found in active session.');
+      }
+
+      final hrStage = stages.firstWhere(
+        (s) => s is Map && s['stage_type'] == 'hr_interview',
+        orElse: () => throw Exception('Could not find an HR stage in the active session.'),
+      ) as Map;
+
+      final hrStageId = hrStage['_id'] as String? ?? hrStage['id'] as String?;
+      if (hrStageId == null || hrStageId.isEmpty) {
+        throw Exception('Invalid HR stage ID.');
+      }
+
+      final String activeQuestion;
+      final String status = hrStage['status'] as String? ?? 'not_started';
+
+      if (status != 'started' && status != 'completed') {
+        // Start the HR interview stage using the real API
+        final startResponse = await startHrStage(hrStageId, 'Behavioral');
+        activeQuestion = startResponse.question;
+      } else {
+        // Retrieve the current active question
+        final nextQuestionResponse = await getNextQuestion(hrStageId);
+        activeQuestion = nextQuestionResponse.data.question;
+      }
+
+      return HrInterviewSessionModel(
+        stageId: hrStageId,
+        headerTimerLabel: '0:00',
+        interviewerName: 'PrepYou AI',
+        interviewerRole: 'HR Interviewer',
+        liveQuestionCue: activeQuestion,
+        messages: [
+          {
+            'sender': 'ai',
+            'body': activeQuestion,
+            'timestamp': '0:00',
+          }
+        ],
+      );
+    } on DioException catch (e) {
+      final message = _parseErrorMessage(e);
+      throw Exception(message);
+    } catch (e) {
+      throw Exception('An unexpected error occurred: $e');
+    }
   }
 
   @override
@@ -101,6 +147,7 @@ class HrInterviewRemoteDataSourceImpl implements HrInterviewRemoteDataSource {
       if (response.statusCode == 200 || response.statusCode == 201) {
         return HrSubmitResponseDto.fromJson(
           response.data as Map<String, dynamic>,
+          responseText,
         );
       } else {
         throw DioException(

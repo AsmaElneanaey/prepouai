@@ -2,13 +2,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../domain/usecases/get_tech_interview.dart';
 import '../../domain/usecases/submit_code.dart';
+import '../../domain/usecases/complete_tech_interview_stage_use_case.dart';
+import '../../domain/usecases/send_tech_chat_message_use_case.dart';
 import 'tech_interview_event.dart';
 import 'tech_interview_state.dart';
 import '../../domain/entities/tech_interview_session.dart';
 
 class TechInterviewBloc extends Bloc<TechInterviewEvent, TechInterviewState> {
-  TechInterviewBloc(this._getTechInterview, this._submitCode)
-      : super(const TechInterviewInitial()) {
+  TechInterviewBloc(
+    this._getTechInterview,
+    this._submitCode,
+    this._completeTechStage,
+    this._sendTechChatMessage,
+  ) : super(const TechInterviewInitial()) {
     on<TechInterviewRequested>(_onRequested);
     on<CodeChanged>(_onCodeChanged);
     on<LanguageChanged>(_onLanguageChanged);
@@ -18,6 +24,8 @@ class TechInterviewBloc extends Bloc<TechInterviewEvent, TechInterviewState> {
 
   final GetTechInterviewUseCase _getTechInterview;
   final SubmitCodeUseCase _submitCode;
+  final CompleteTechInterviewStageUseCase _completeTechStage;
+  final SendTechChatMessageUseCase _sendTechChatMessage;
 
   Future<void> _onRequested(
     TechInterviewRequested event,
@@ -69,7 +77,12 @@ class TechInterviewBloc extends Bloc<TechInterviewEvent, TechInterviewState> {
       try {
         final result = await _submitCode(s.currentCode, s.currentLanguage);
         final isAllPassed = result.contains('All tests passed!');
-        
+
+        if (isAllPassed) {
+          // Trigger the complete API on the backend when tests pass
+          await _completeTechStage(s.session.stageId);
+        }
+
         List<TechChatMessage> updatedMessages = List.from(s.session.messages);
         if (isAllPassed) {
           updatedMessages.add(const TechChatMessage(
@@ -85,13 +98,7 @@ class TechInterviewBloc extends Bloc<TechInterviewEvent, TechInterviewState> {
           ));
         }
 
-        final updatedSession = TechInterviewSession(
-          headerTimerLabel: s.session.headerTimerLabel,
-          interviewerName: s.session.interviewerName,
-          interviewerRole: s.session.interviewerRole,
-          question: s.session.question,
-          messages: updatedMessages,
-        );
+        final updatedSession = s.session.copyWith(messages: updatedMessages);
 
         emit(s.copyWith(
           isSubmitting: false,
@@ -123,25 +130,15 @@ class TechInterviewBloc extends Bloc<TechInterviewEvent, TechInterviewState> {
 
       List<TechChatMessage> updatedMessages = List.from(s.session.messages)..add(userMsg);
 
-      final updatedSession = TechInterviewSession(
-        headerTimerLabel: s.session.headerTimerLabel,
-        interviewerName: s.session.interviewerName,
-        interviewerRole: s.session.interviewerRole,
-        question: s.session.question,
-        messages: updatedMessages,
-      );
+      final updatedSession = s.session.copyWith(messages: updatedMessages);
 
       emit(s.copyWith(session: updatedSession));
 
-      // Simulate AI typing after a small delay
-      await Future<void>.delayed(const Duration(milliseconds: 600));
-
-      final nextState = state;
-      if (nextState is TechInterviewLoaded) {
-        String aiResponse = "Got it. When writing the solution, consider whether you can optimize it from O(N^2) to O(N) using a Hash Map.";
-        if (event.body.toLowerCase().contains('map') || event.body.toLowerCase().contains('hash')) {
-          aiResponse = "Yes, using a Hash Map is the optimal approach! It allows us to perform lookups in O(1) time.";
-        }
+      try {
+        final aiResponse = await _sendTechChatMessage(
+          id: s.session.stageId,
+          message: event.body,
+        );
 
         final aiMsg = TechChatMessage(
           sender: TechMessageSender.ai,
@@ -149,17 +146,27 @@ class TechInterviewBloc extends Bloc<TechInterviewEvent, TechInterviewState> {
           timestampLabel: '0:20',
         );
 
-        List<TechChatMessage> finalMessages = List.from(nextState.session.messages)..add(aiMsg);
-
-        emit(nextState.copyWith(
-          session: TechInterviewSession(
-            headerTimerLabel: nextState.session.headerTimerLabel,
-            interviewerName: nextState.session.interviewerName,
-            interviewerRole: nextState.session.interviewerRole,
-            question: nextState.session.question,
-            messages: finalMessages,
-          ),
-        ));
+        final nextState = state;
+        if (nextState is TechInterviewLoaded) {
+          final finalMessages = List<TechChatMessage>.from(nextState.session.messages)..add(aiMsg);
+          emit(nextState.copyWith(
+            session: nextState.session.copyWith(messages: finalMessages),
+          ));
+        }
+      } catch (e) {
+        final errorMsg = TechChatMessage(
+          sender: TechMessageSender.ai,
+          body: 'Error: ${e.toString()}',
+          timestampLabel: '0:20',
+        );
+        final nextState = state;
+        if (nextState is TechInterviewLoaded) {
+          emit(nextState.copyWith(
+            session: nextState.session.copyWith(
+              messages: List.from(nextState.session.messages)..add(errorMsg),
+            ),
+          ));
+        }
       }
     }
   }

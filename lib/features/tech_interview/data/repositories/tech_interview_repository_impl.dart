@@ -27,4 +27,9 @@ class TechInterviewRepositoryImpl implements TechInterviewRepository {
   Future<void> completeTechInterviewStage(String id) async {
     await _remoteDataSource.completeTechStage(id);
   }
+
+  @override
+  Future<String> sendChatMessage({required String id, required String message}) async {
+    return _remoteDataSource.sendChatMessage(id: id, message: message);
+  }
 }

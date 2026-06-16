@@ -18,7 +18,17 @@ class HrInterviewLoading extends HrInterviewState {
 }
 
 class HrInterviewLoaded extends HrInterviewState {
-  const HrInterviewLoaded(this.session);
+  const HrInterviewLoaded(this.session, {this.isSubmitting = false});
+
+  final HrInterviewSession session;
+  final bool isSubmitting;
+
+  @override
+  List<Object?> get props => [session, isSubmitting];
+}
+
+class HrInterviewCompleted extends HrInterviewState {
+  const HrInterviewCompleted(this.session);
 
   final HrInterviewSession session;
 

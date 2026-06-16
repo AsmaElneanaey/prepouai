@@ -2,6 +2,7 @@ import '../../domain/entities/tech_interview_session.dart';
 
 class TechInterviewSessionModel {
   TechInterviewSessionModel({
+    required this.stageId,
     required this.headerTimerLabel,
     required this.interviewerName,
     required this.interviewerRole,
@@ -13,6 +14,7 @@ class TechInterviewSessionModel {
     required this.messages,
   });
 
+  final String stageId;
   final String headerTimerLabel;
   final String interviewerName;
   final String interviewerRole;
@@ -25,23 +27,38 @@ class TechInterviewSessionModel {
 
   TechInterviewSession toEntity() {
     return TechInterviewSession(
+      stageId: stageId,
       headerTimerLabel: headerTimerLabel,
       interviewerName: interviewerName,
       interviewerRole: interviewerRole,
       question: CodeQuestion(
         title: questionTitle,
         description: questionDescription,
-        difficulty: TechDifficulty.values.byName(questionDifficulty),
+        difficulty: _parseDifficulty(questionDifficulty),
         starterCode: questionStarterCode,
         language: questionLanguage,
       ),
       messages: messages.map((m) {
+        final senderStr = (m['sender'] as String? ?? 'ai').toLowerCase();
+        final sender = senderStr == 'user' ? TechMessageSender.user : TechMessageSender.ai;
         return TechChatMessage(
-          sender: TechMessageSender.values.byName(m['sender'] as String),
-          body: m['body'] as String,
-          timestampLabel: m['timestamp'] as String,
+          sender: sender,
+          body: m['body'] as String? ?? '',
+          timestampLabel: m['timestamp'] as String? ?? '',
         );
       }).toList(),
     );
+  }
+
+  TechDifficulty _parseDifficulty(String diff) {
+    switch (diff.toLowerCase()) {
+      case 'medium':
+        return TechDifficulty.medium;
+      case 'hard':
+        return TechDifficulty.hard;
+      case 'easy':
+      default:
+        return TechDifficulty.easy;
+    }
   }
 }

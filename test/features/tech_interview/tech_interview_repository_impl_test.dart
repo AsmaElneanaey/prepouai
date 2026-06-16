@@ -6,6 +6,7 @@ import 'package:prepouai/features/tech_interview/data/repositories/tech_intervie
 import 'package:prepouai/features/tech_interview/domain/entities/tech_chat_message.dart';
 import 'package:prepouai/features/tech_interview/domain/usecases/start_tech_interview_stage_use_case.dart';
 import 'package:prepouai/features/tech_interview/domain/usecases/complete_tech_interview_stage_use_case.dart';
+import 'package:prepouai/features/tech_interview/domain/usecases/send_tech_chat_message_use_case.dart';
 
 class FakeTechInterviewRemoteDataSource implements TechInterviewRemoteDataSource {
   FakeTechInterviewRemoteDataSource({required this.shouldSucceed});
@@ -18,6 +19,7 @@ class FakeTechInterviewRemoteDataSource implements TechInterviewRemoteDataSource
       throw Exception('Server error');
     }
     return TechInterviewSessionModel(
+      stageId: 'stage-123',
       headerTimerLabel: '0:15',
       interviewerName: 'PrepYou AI Code Coach',
       interviewerRole: 'Technical Interviewer',
@@ -48,25 +50,50 @@ class FakeTechInterviewRemoteDataSource implements TechInterviewRemoteDataSource
   }
 
   @override
-  Future<TechStageResponseDto> startTechStage(String id) async {
+  Future<StartTechResponseDto> startTechStage(String id) async {
     if (!shouldSucceed) {
       throw Exception('Server error');
     }
-    return TechStageResponseDto.fromJson(const {
+    return StartTechResponseDto.fromJson(const {
       'success': true,
       'message': 'Tech stage started successfully',
+      'data': {
+        'techStage': {
+          'id': 'stage-123',
+          'stage_id': 'session-123',
+        },
+        'problem': {
+          'title': 'Two Sum',
+          'description': 'Write a solution for Two Sum.',
+          'difficulty': 'Easy',
+          'starter_codes': [
+            {
+              'language': 'dart',
+              'code': 'List<int> twoSum(...)',
+            }
+          ]
+        }
+      }
     });
   }
 
   @override
-  Future<TechStageResponseDto> completeTechStage(String id) async {
+  Future<CompleteTechResponseDto> completeTechStage(String id) async {
     if (!shouldSucceed) {
       throw Exception('Server error');
     }
-    return TechStageResponseDto.fromJson(const {
+    return CompleteTechResponseDto.fromJson(const {
       'success': true,
       'message': 'Tech stage completed successfully',
     });
+  }
+
+  @override
+  Future<String> sendChatMessage({required String id, required String message}) async {
+    if (!shouldSucceed) {
+      throw Exception('Server error');
+    }
+    return 'That sounds like a solid approach.';
   }
 }
 
@@ -119,6 +146,19 @@ void main() {
         useCase('session-123'),
         completes,
       );
+    });
+
+    test('sendTechChatMessage successfully executes', () async {
+      final fakeDs = FakeTechInterviewRemoteDataSource(shouldSucceed: true);
+      final repository = TechInterviewRepositoryImpl(fakeDs);
+      final useCase = SendTechChatMessageUseCase(repository);
+
+      final result = await useCase(
+        id: 'session-123',
+        message: 'Hello',
+      );
+
+      expect(result, 'That sounds like a solid approach.');
     });
   });
 }
