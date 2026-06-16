@@ -16,6 +16,14 @@ class FinalReportResponseDto {
     );
   }
 
+  factory FinalReportResponseDto.fromApiJson(Map<String, dynamic> json, Map<String, dynamic>? sessionMap) {
+    return FinalReportResponseDto(
+      success: json['success'] as bool? ?? false,
+      message: json['message'] as String? ?? '',
+      data: FinalReportModel.fromApiJson(json['data'] as Map<String, dynamic>, sessionMap),
+    );
+  }
+
   final bool success;
   final String message;
   final FinalReportModel data;
@@ -28,7 +36,7 @@ class ReportShareResponseModel {
 
   factory ReportShareResponseModel.fromJson(Map<String, dynamic> json) {
     return ReportShareResponseModel(
-      token: json['token'] as String? ?? '',
+      token: json['share_token'] as String? ?? json['token'] as String? ?? '',
     );
   }
 

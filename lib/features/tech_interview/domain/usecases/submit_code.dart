@@ -5,6 +5,16 @@ class SubmitCodeUseCase {
 
   final TechInterviewRepository _repository;
 
-  Future<String> call(String code, String language) =>
-      _repository.submitCode(code, language);
+  Future<String> call({
+    required String techInterviewId,
+    required String problemId,
+    required String code,
+    required String language,
+  }) =>
+      _repository.submitCode(
+        techInterviewId: techInterviewId,
+        problemId: problemId,
+        code: code,
+        language: language,
+      );
 }

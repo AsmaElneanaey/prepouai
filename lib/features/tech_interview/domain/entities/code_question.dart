@@ -4,6 +4,7 @@ enum TechDifficulty { easy, medium, hard }
 
 class CodeQuestion extends Equatable {
   const CodeQuestion({
+    required this.id,
     required this.title,
     required this.description,
     required this.difficulty,
@@ -11,6 +12,7 @@ class CodeQuestion extends Equatable {
     required this.language,
   });
 
+  final String id;
   final String title;
   final String description;
   final TechDifficulty difficulty;
@@ -19,6 +21,7 @@ class CodeQuestion extends Equatable {
 
   @override
   List<Object?> get props => [
+        id,
         title,
         description,
         difficulty,

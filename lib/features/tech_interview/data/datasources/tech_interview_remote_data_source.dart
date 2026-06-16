@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../../../../core/api/api_endpoints.dart';
 import '../models/tech_interview_session_model.dart';
@@ -5,7 +6,12 @@ import '../models/tech_stage_models.dart';
 
 abstract class TechInterviewRemoteDataSource {
   Future<TechInterviewSessionModel> fetchActiveSession();
-  Future<String> submitCode(String code, String language);
+  Future<String> submitCode({
+    required String techInterviewId,
+    required String problemId,
+    required String code,
+    required String language,
+  });
   Future<StartTechResponseDto> startTechStage(String id);
   Future<CompleteTechResponseDto> completeTechStage(String id);
   Future<String> sendChatMessage({required String id, required String message});
@@ -63,6 +69,7 @@ class TechInterviewRemoteDataSourceImpl implements TechInterviewRemoteDataSource
 
       return TechInterviewSessionModel(
         stageId: techStageId,
+        questionId: startDto.problemId,
         headerTimerLabel: '0:15',
         interviewerName: 'PrepYou AI Code Coach',
         interviewerRole: 'Technical Interviewer',
@@ -89,35 +96,70 @@ class TechInterviewRemoteDataSourceImpl implements TechInterviewRemoteDataSource
   }
 
   @override
-  Future<String> submitCode(String code, String language) async {
-    await Future<void>.delayed(const Duration(milliseconds: 1000));
-    
-    if (code.trim().isEmpty || (code.contains('// Write your code here') && code.contains('return [];'))) {
-      return '''
-[Running] dart main.dart
-✗ Test Case 1: nums = [2,7,11,15], target = 9
-  Expected: [0,1], Got: []
-✗ Test Case 2: nums = [3,2,4], target = 6
-  Expected: [1,2], Got: []
+  Future<String> submitCode({
+    required String techInterviewId,
+    required String problemId,
+    required String code,
+    required String language,
+  }) async {
+    try {
+      final response = await _dio.post(
+        ApiEndpoints.codingSubmissions,
+        data: {
+          'tech_interview_id': techInterviewId,
+          'problem_id': problemId,
+          'language': language,
+          'code_submitted': code,
+        },
+      );
 
-1 or more test cases failed. Please refine your solution.
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = response.data as Map<String, dynamic>;
+        final innerData = data['data'] as Map<String, dynamic>? ?? const {};
+        final isPassed = innerData['is_passed'] as bool? ?? false;
+        final testCasesPassed = innerData['test_cases_passed'] as int? ?? 0;
+        final testCasesTotal = innerData['test_cases_total'] as int? ?? 0;
+        final executionTimeMs = innerData['execution_time_ms'] as int? ?? 0;
+
+        final aiFeedbackStr = innerData['ai_feedback'] as String? ?? '';
+
+        var qualityScore = 0;
+        var feedback = '';
+        var timeComplexity = '';
+        var spaceComplexity = '';
+
+        if (aiFeedbackStr.isNotEmpty) {
+          try {
+            final parsedFeedback = jsonDecode(aiFeedbackStr) as Map<String, dynamic>;
+            qualityScore = parsedFeedback['quality_score'] as int? ?? 0;
+            feedback = parsedFeedback['feedback'] as String? ?? '';
+            timeComplexity = parsedFeedback['time_complexity'] as String? ?? '';
+            spaceComplexity = parsedFeedback['space_complexity'] as String? ?? '';
+          } catch (_) {}
+        }
+
+        final String passStatusIndicator = isPassed ? '✓' : '✗';
+        final String emojiIndicator = isPassed ? 'All tests passed! 🎉' : '1 or more test cases failed. Please refine your solution.';
+
+        return '''
+[Running] sandboxed execution
+$passStatusIndicator Test Cases: $testCasesPassed / $testCasesTotal passed.
+- Execution time: ${executionTimeMs}ms
+${isPassed ? '\nAll tests passed! 🎉\n- Code Quality Score: $qualityScore/100\n- Time Complexity: $timeComplexity\n- Space Complexity: $spaceComplexity\n- Feedback: $feedback' : '\n$emojiIndicator\n- Feedback: $feedback'}
 ''';
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+        );
+      }
+    } on DioException catch (e) {
+      final message = _parseErrorMessage(e);
+      throw Exception(message);
+    } catch (e) {
+      throw Exception('An unexpected error occurred: $e');
     }
-
-    return '''
-[Running] dart main.dart
-✓ Test Case 1: nums = [2,7,11,15], target = 9 -> Passed (indices [0, 1])
-✓ Test Case 2: nums = [3,2,4], target = 6 -> Passed (indices [1, 2])
-✓ Test Case 3: nums = [3,3], target = 6 -> Passed (indices [0, 1])
-
-All tests passed! 🎉
-- Execution time: 12ms
-- Memory usage: 4.2 MB
-- Time Complexity: O(N)
-- Space Complexity: O(N)
-
-Your code is fully optimized. Click continue to finish the interview pipeline!
-''';
   }
 
   @override

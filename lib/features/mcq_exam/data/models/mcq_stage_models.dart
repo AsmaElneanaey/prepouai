@@ -12,7 +12,7 @@ class McqAnswerResponseModel {
     return McqAnswerResponseModel(
       isCorrect: json['isCorrect'] as bool? ?? json['is_correct'] as bool? ?? false,
       explanation: json['explanation'] as String? ?? '',
-      correctOptionIndex: json['correct_option_index'] as int?,
+      correctOptionIndex: (json['correct_option_index'] as num?)?.round(),
     );
   }
 
@@ -59,10 +59,10 @@ class McqCompleteResponseModel {
 
   factory McqCompleteResponseModel.fromJson(Map<String, dynamic> json) {
     return McqCompleteResponseModel(
-      scorePercent: json['score_pct'] as int? ?? json['scorePercent'] as int? ?? 0,
-      correctCount: json['correct_count'] as int? ?? json['correctCount'] as int? ?? 0,
-      totalQuestions: json['total_questions'] as int? ?? json['totalQuestions'] as int? ?? 0,
-      answeredCount: json['answered_count'] as int? ?? json['answeredCount'] as int? ?? 0,
+      scorePercent: (json['score_pct'] as num?)?.round() ?? (json['scorePercent'] as num?)?.round() ?? 0,
+      correctCount: (json['correct_count'] as num?)?.round() ?? (json['correctCount'] as num?)?.round() ?? 0,
+      totalQuestions: (json['total_questions'] as num?)?.round() ?? (json['totalQuestions'] as num?)?.round() ?? 0,
+      answeredCount: (json['answered_count'] as num?)?.round() ?? (json['answeredCount'] as num?)?.round() ?? 0,
     );
   }
 
@@ -117,10 +117,12 @@ class StartMcqResponseDto {
     final stageId = mcqStage?['stage_id'] as String? ?? mcqStage?['_id'] as String? ?? mcqStage?['id'] as String? ?? '';
     
     final int durationSeconds;
-    if (mcqStage != null && mcqStage['time_limit_minutes'] != null) {
-      durationSeconds = (mcqStage['time_limit_minutes'] as int) * 60;
+    final timeLimit = mcqStage?['time_limit_minutes'];
+    if (timeLimit is num) {
+      durationSeconds = timeLimit.round() * 60;
     } else {
-      durationSeconds = payload['durationSeconds'] as int? ?? payload['duration_seconds'] as int? ?? 1200;
+      final ds = payload['durationSeconds'] ?? payload['duration_seconds'];
+      durationSeconds = ds is num ? ds.round() : 1200;
     }
 
     return StartMcqResponseDto(

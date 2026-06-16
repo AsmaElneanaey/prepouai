@@ -75,7 +75,12 @@ class TechInterviewBloc extends Bloc<TechInterviewEvent, TechInterviewState> {
     if (s is TechInterviewLoaded) {
       emit(s.copyWith(isSubmitting: true, terminalOutput: '[Compiling and running tests...]'));
       try {
-        final result = await _submitCode(s.currentCode, s.currentLanguage);
+        final result = await _submitCode(
+          techInterviewId: s.session.stageId,
+          problemId: s.session.question.id,
+          code: s.currentCode,
+          language: s.currentLanguage,
+        );
         final isAllPassed = result.contains('All tests passed!');
 
         if (isAllPassed) {

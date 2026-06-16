@@ -22,7 +22,7 @@ class SessionStageModel {
       status: json['status'] as String? ?? '',
       startedAt: json['started_at'] as String?,
       completedAt: json['completed_at'] as String?,
-      score: json['score'] as int?,
+      score: (json['score'] as num?)?.round(),
       badge: json['badge'] as String?,
     );
   }

@@ -3,6 +3,7 @@ class StartTechResponseDto {
     required this.success,
     required this.message,
     required this.stageId,
+    required this.problemId,
     required this.problemTitle,
     required this.problemDescription,
     required this.problemDifficulty,
@@ -22,6 +23,7 @@ class StartTechResponseDto {
       success: json['success'] as bool? ?? false,
       message: json['message'] as String? ?? '',
       stageId: techStage['_id'] as String? ?? techStage['id'] as String? ?? '',
+      problemId: problem['_id'] as String? ?? problem['id'] as String? ?? '',
       problemTitle: problem['title'] as String? ?? '',
       problemDescription: problem['description'] as String? ?? '',
       problemDifficulty: problem['difficulty'] as String? ?? 'easy',
@@ -33,6 +35,7 @@ class StartTechResponseDto {
   final bool success;
   final String message;
   final String stageId;
+  final String problemId;
   final String problemTitle;
   final String problemDescription;
   final String problemDifficulty;

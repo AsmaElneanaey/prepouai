@@ -46,10 +46,19 @@ class FakeFinalReportRemoteDataSource implements FinalReportRemoteDataSource {
       'success': true,
       'message': 'Report fetched',
       'data': {
-        'overallScore': 90,
-        'candidateName': 'Alex Johnson',
-        'candidateRole': 'Senior Frontend Engineer',
-        'pipelineDateLabel': 'June 9, 2026',
+        'report': {
+          '_id': 'report-123',
+          'session_id': 'session-123',
+          'candidate_name': 'Alex Johnson',
+          'candidate_role': 'Senior Frontend Engineer',
+          'overall_score': 90,
+          'readiness_score': 85,
+          'technical_score': 80,
+          'communication_score': 88,
+          'strength_summary': 'React expert.',
+          'improvement_areas': ['Edge cases'],
+          'generated_at': '2026-06-16T12:00:00.000Z',
+        },
         'stageScores': [
           {
             'stageName': 'CV Screening',
@@ -58,8 +67,22 @@ class FakeFinalReportRemoteDataSource implements FinalReportRemoteDataSource {
             'iconKey': 'cv',
           }
         ],
-        'strengths': ['React expert'],
-        'improvements': ['Edge cases'],
+        'skillScores': [
+          {
+            'skill_name': 'React',
+            'score': 95,
+            'skill_area': 'Frontend',
+            'color': '#3b82f6'
+          }
+        ],
+        'recommendations': [
+          {
+            'title': 'Improve Error Handling',
+            'description': 'Ensure boundary handling in submissions.',
+            'priority': 'High',
+            'category': 'technical'
+          }
+        ]
       }
     });
   }
@@ -73,7 +96,8 @@ class FakeFinalReportRemoteDataSource implements FinalReportRemoteDataSource {
       'success': true,
       'message': 'Report share link generated',
       'data': {
-        'token': 'share-token-xyz',
+        'share_token': 'share-token-xyz',
+        'is_shared': true
       }
     });
   }
@@ -87,10 +111,19 @@ class FakeFinalReportRemoteDataSource implements FinalReportRemoteDataSource {
       'success': true,
       'message': 'Shared report retrieved',
       'data': {
-        'overallScore': 90,
-        'candidateName': 'Alex Johnson',
-        'candidateRole': 'Senior Frontend Engineer',
-        'pipelineDateLabel': 'June 9, 2026',
+        'report': {
+          '_id': 'report-123',
+          'session_id': 'session-123',
+          'candidate_name': 'Alex Johnson',
+          'candidate_role': 'Senior Frontend Engineer',
+          'overall_score': 90,
+          'readiness_score': 85,
+          'technical_score': 80,
+          'communication_score': 88,
+          'strength_summary': 'React expert.',
+          'improvement_areas': ['Edge cases'],
+          'generated_at': '2026-06-16T12:00:00.000Z',
+        },
         'stageScores': [
           {
             'stageName': 'CV Screening',
@@ -99,8 +132,22 @@ class FakeFinalReportRemoteDataSource implements FinalReportRemoteDataSource {
             'iconKey': 'cv',
           }
         ],
-        'strengths': ['React expert'],
-        'improvements': ['Edge cases'],
+        'skillScores': [
+          {
+            'skill_name': 'React',
+            'score': 95,
+            'skill_area': 'Frontend',
+            'color': '#3b82f6'
+          }
+        ],
+        'recommendations': [
+          {
+            'title': 'Improve Error Handling',
+            'description': 'Ensure boundary handling in submissions.',
+            'priority': 'High',
+            'category': 'technical'
+          }
+        ]
       }
     });
   }
@@ -152,6 +199,33 @@ void main() {
       expect(report.candidateName, 'Alex Johnson');
       expect(report.overallScore, 90);
       expect(report.stageScores.first.score, 95);
+    });
+
+    test('FinalReportModel.fromApiJson parses double/float scores safely into rounded ints', () {
+      final json = {
+        'success': true,
+        'data': {
+          'report': {
+            '_id': 'report-123',
+            'session_id': 'session-123',
+            'candidate_name': 'Alex Johnson',
+            'candidate_role': 'Senior Frontend Engineer',
+            'overall_score': 24.4,
+            'readiness_score': 24.0,
+            'technical_score': 26.6,
+            'communication_score': 0.0,
+            'strength_summary': 'Strong developer.',
+            'improvement_areas': ['Refine coding.'],
+            'generated_at': '2026-06-16T12:00:00.000Z',
+          }
+        }
+      };
+      
+      final model = FinalReportModel.fromApiJson(json['data'] as Map<String, dynamic>, null);
+      expect(model.overallScore, 24);
+      expect(model.stageScores[1]['score'], 24); // MCQ Exam (readiness)
+      expect(model.stageScores[2]['score'], 0);  // HR Behavioral (communication)
+      expect(model.stageScores[3]['score'], 27); // Technical Coding (technical)
     });
   });
 }

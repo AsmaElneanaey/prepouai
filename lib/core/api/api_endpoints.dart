@@ -19,4 +19,5 @@ class ApiEndpoints {
   static const String finalReportStage = '/api/v1/final-report-stage';
   static const String purchaseCredits = '/api/v1/credit-transactions/purchase';
   static const String creditTransactions = '/api/v1/credit-transactions';
+  static const String codingSubmissions = '/api/v1/coding-submissions';
 }

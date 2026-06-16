@@ -17,49 +17,54 @@ class FinalReportRemoteDataSourceImpl implements FinalReportRemoteDataSource {
 
   @override
   Future<FinalReportModel> fetchFinalReport() async {
-    await Future<void>.delayed(const Duration(milliseconds: 400));
-    return FinalReportModel(
-      overallScore: 86,
-      candidateName: 'Alex Johnson',
-      candidateRole: 'Senior Frontend Engineer',
-      pipelineDateLabel: 'June 9, 2026',
-      stageScores: const [
-        {
-          'stageName': 'CV Screening',
-          'score': 91,
-          'feedback': 'Excellent alignment in React and TypeScript. Highlight more system metrics.',
-          'iconKey': 'cv',
-        },
-        {
-          'stageName': 'MCQ Exam',
-          'score': 85,
-          'feedback': 'Solid logic skills. 17 out of 20 answered correctly. Keep practicing DSA fundamentals.',
-          'iconKey': 'mcq',
-        },
-        {
-          'stageName': 'HR Behavioral',
-          'score': 82,
-          'feedback': 'Strong communication and Stripe background match. Good story framework.',
-          'iconKey': 'hr',
-        },
-        {
-          'stageName': 'Technical Coding',
-          'score': 88,
-          'feedback': 'Solved twoSum optimally with Hash Map. Clean indentation and naming.',
-          'iconKey': 'tech',
-        },
-      ],
-      strengths: const [
-        'Robust expertise in Frontend and Mobile framework architectures.',
-        'Optimal time-complexity approaches for live algorithm challenges.',
-        'High communication rating and structured delivery of behavioral answers.',
-      ],
-      improvements: const [
-        'Expand resume detail on Stripe backend integrations or system scaling.',
-        'Deepen understanding of edge constraints (e.g. integer overflow) in live coding.',
-        'Improve confidence in answering design pattern architectural tradeoffs.',
-      ],
-    );
+    try {
+      final sessionsResponse = await _dio.get(ApiEndpoints.createSession);
+      if (sessionsResponse.statusCode != 200) {
+        throw Exception('Failed to load user interview sessions');
+      }
+
+      final data = sessionsResponse.data;
+      if (data is! Map) {
+        throw Exception('Unexpected session response format');
+      }
+
+      final sessions = data['data'] as List<dynamic>? ?? const [];
+      if (sessions.isEmpty) {
+        throw Exception('No interview sessions found. Please set up a pipeline first.');
+      }
+
+      final latestSession = sessions.firstWhere(
+        (s) => s is Map && s['status'] == 'active',
+        orElse: () => sessions.first,
+      ) as Map?;
+
+      if (latestSession == null) {
+        throw Exception('Could not find active session.');
+      }
+
+      final stages = latestSession['stages'] as List?;
+      if (stages == null) {
+        throw Exception('No stages found in active session.');
+      }
+
+      final reportStage = stages.firstWhere(
+        (s) => s is Map && s['stage_type'] == 'final_report',
+        orElse: () => throw Exception('Could not find a Final Report stage in the active session.'),
+      ) as Map;
+
+      final reportStageId = reportStage['_id'] as String? ?? reportStage['id'] as String?;
+      if (reportStageId == null || reportStageId.isEmpty) {
+        throw Exception('Invalid Final Report stage ID.');
+      }
+
+      final responseDto = await fetchFinalReportById(reportStageId);
+      return responseDto.data;
+    } on DioException catch (e) {
+      final message = _parseErrorMessage(e);
+      throw Exception(message);
+    } catch (e) {
+      throw Exception('An unexpected error occurred: $e');
+    }
   }
 
   @override
@@ -70,8 +75,25 @@ class FinalReportRemoteDataSourceImpl implements FinalReportRemoteDataSource {
       );
 
       if (response.statusCode == 200) {
-        return FinalReportResponseDto.fromJson(
-          response.data as Map<String, dynamic>,
+        final rawData = response.data as Map<String, dynamic>;
+        final innerData = rawData['data'] as Map<String, dynamic>? ?? {};
+        final reportMap = innerData['report'] as Map<String, dynamic>? ?? {};
+        final sessionId = reportMap['session_id'] as String? ?? '';
+
+        Map<String, dynamic>? sessionMap;
+        if (sessionId.isNotEmpty) {
+          try {
+            final sessionResponse = await _dio.get('${ApiEndpoints.createSession}/$sessionId');
+            if (sessionResponse.statusCode == 200) {
+              final sData = sessionResponse.data as Map<String, dynamic>?;
+              sessionMap = sData?['data'] as Map<String, dynamic>?;
+            }
+          } catch (_) {}
+        }
+
+        return FinalReportResponseDto.fromApiJson(
+          rawData,
+          sessionMap,
         );
       } else {
         throw DioException(
@@ -122,8 +144,25 @@ class FinalReportRemoteDataSourceImpl implements FinalReportRemoteDataSource {
       );
 
       if (response.statusCode == 200) {
-        return FinalReportResponseDto.fromJson(
-          response.data as Map<String, dynamic>,
+        final rawData = response.data as Map<String, dynamic>;
+        final innerData = rawData['data'] as Map<String, dynamic>? ?? {};
+        final reportMap = innerData['report'] as Map<String, dynamic>? ?? {};
+        final sessionId = reportMap['session_id'] as String? ?? '';
+
+        Map<String, dynamic>? sessionMap;
+        if (sessionId.isNotEmpty) {
+          try {
+            final sessionResponse = await _dio.get('${ApiEndpoints.createSession}/$sessionId');
+            if (sessionResponse.statusCode == 200) {
+              final sData = sessionResponse.data as Map<String, dynamic>?;
+              sessionMap = sData?['data'] as Map<String, dynamic>?;
+            }
+          } catch (_) {}
+        }
+
+        return FinalReportResponseDto.fromApiJson(
+          rawData,
+          sessionMap,
         );
       } else {
         throw DioException(

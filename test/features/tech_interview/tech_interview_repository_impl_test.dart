@@ -20,6 +20,7 @@ class FakeTechInterviewRemoteDataSource implements TechInterviewRemoteDataSource
     }
     return TechInterviewSessionModel(
       stageId: 'stage-123',
+      questionId: 'prob-123',
       headerTimerLabel: '0:15',
       interviewerName: 'PrepYou AI Code Coach',
       interviewerRole: 'Technical Interviewer',
@@ -39,7 +40,12 @@ class FakeTechInterviewRemoteDataSource implements TechInterviewRemoteDataSource
   }
 
   @override
-  Future<String> submitCode(String code, String language) async {
+  Future<String> submitCode({
+    required String techInterviewId,
+    required String problemId,
+    required String code,
+    required String language,
+  }) async {
     if (!shouldSucceed) {
       throw Exception('Server error');
     }
@@ -63,6 +69,7 @@ class FakeTechInterviewRemoteDataSource implements TechInterviewRemoteDataSource
           'stage_id': 'session-123',
         },
         'problem': {
+          'id': 'prob-123',
           'title': 'Two Sum',
           'description': 'Write a solution for Two Sum.',
           'difficulty': 'Easy',
@@ -113,7 +120,12 @@ void main() {
     test('submitCode returns test failures for empty code submission', () async {
       final fakeDs = FakeTechInterviewRemoteDataSource(shouldSucceed: true);
       final repository = TechInterviewRepositoryImpl(fakeDs);
-      final result = await repository.submitCode('', 'dart');
+      final result = await repository.submitCode(
+        techInterviewId: 'stage-123',
+        problemId: 'prob-123',
+        code: '',
+        language: 'dart',
+      );
 
       expect(result, contains('failed'));
     });
@@ -121,7 +133,12 @@ void main() {
     test('submitCode returns test successes for actual solution code submission', () async {
       final fakeDs = FakeTechInterviewRemoteDataSource(shouldSucceed: true);
       final repository = TechInterviewRepositoryImpl(fakeDs);
-      final result = await repository.submitCode('// some implementation here', 'dart');
+      final result = await repository.submitCode(
+        techInterviewId: 'stage-123',
+        problemId: 'prob-123',
+        code: '// some implementation here',
+        language: 'dart',
+      );
 
       expect(result, contains('All tests passed!'));
     });

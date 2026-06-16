@@ -62,11 +62,20 @@ class McqExamBloc extends Bloc<McqExamEvent, McqExamState> {
     try {
       final question = current.currentQuestion;
       
+      int selectedOptionIndex = question.options.indexWhere((opt) => opt.id == event.optionId);
+      if (selectedOptionIndex == -1) {
+        try {
+          selectedOptionIndex = int.parse(event.optionId);
+        } catch (_) {
+          selectedOptionIndex = 0;
+        }
+      }
+
       // Call real submit API
       final answerResponse = await _submitAnswer(
         id: current.session.stageId,
         questionId: question.id,
-        selectedOptionIndex: int.parse(event.optionId),
+        selectedOptionIndex: selectedOptionIndex,
         timeSpentSeconds: 15, // standard default fallback
       );
 
@@ -88,6 +97,24 @@ class McqExamBloc extends Bloc<McqExamEvent, McqExamState> {
         ),
       );
     } catch (e) {
+      final errorStr = e.toString();
+      if (errorStr.contains('Question already answered') || errorStr.contains('already answered')) {
+        final updatedAnswers = Map<int, String>.from(current.selectedAnswers)
+          ..[current.currentIndex] = event.optionId;
+        final updatedRevealed = Set<int>.from(current.revealedIndices)
+          ..add(current.currentIndex);
+        final updatedCorrectOptionIds = Map<int, String>.from(current.correctOptionIds)
+          ..[current.currentIndex] = event.optionId;
+
+        emit(
+          current.copyWith(
+            selectedAnswers: updatedAnswers,
+            revealedIndices: updatedRevealed,
+            correctOptionIds: updatedCorrectOptionIds,
+          ),
+        );
+        return;
+      }
       emit(McqExamError(e.toString()));
     }
   }

@@ -3,6 +3,7 @@ import '../../domain/entities/tech_interview_session.dart';
 class TechInterviewSessionModel {
   TechInterviewSessionModel({
     required this.stageId,
+    required this.questionId,
     required this.headerTimerLabel,
     required this.interviewerName,
     required this.interviewerRole,
@@ -15,6 +16,7 @@ class TechInterviewSessionModel {
   });
 
   final String stageId;
+  final String questionId;
   final String headerTimerLabel;
   final String interviewerName;
   final String interviewerRole;
@@ -32,6 +34,7 @@ class TechInterviewSessionModel {
       interviewerName: interviewerName,
       interviewerRole: interviewerRole,
       question: CodeQuestion(
+        id: questionId,
         title: questionTitle,
         description: questionDescription,
         difficulty: _parseDifficulty(questionDifficulty),

@@ -14,8 +14,18 @@ class TechInterviewRepositoryImpl implements TechInterviewRepository {
   }
 
   @override
-  Future<String> submitCode(String code, String language) async {
-    return _remoteDataSource.submitCode(code, language);
+  Future<String> submitCode({
+    required String techInterviewId,
+    required String problemId,
+    required String code,
+    required String language,
+  }) async {
+    return _remoteDataSource.submitCode(
+      techInterviewId: techInterviewId,
+      problemId: problemId,
+      code: code,
+      language: language,
+    );
   }
 
   @override
