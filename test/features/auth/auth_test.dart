@@ -5,8 +5,11 @@ import 'package:prepouai/features/auth/data/models/login_request_dto.dart';
 import 'package:prepouai/features/auth/data/models/login_response_dto.dart';
 import 'package:prepouai/features/auth/data/models/register_request_dto.dart';
 import 'package:prepouai/features/auth/data/models/register_response_dto.dart';
+import 'package:prepouai/features/auth/data/models/user_profile_claim_dto.dart';
 import 'package:prepouai/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:prepouai/features/auth/domain/entities/user.dart';
+import 'package:prepouai/features/auth/domain/entities/user_profile_claim.dart';
+import 'package:prepouai/features/auth/domain/usecases/get_profile_use_case.dart';
 
 class FakeSecureStorageService implements SecureStorageService {
   final Map<String, String> _memStorage = {};
@@ -34,6 +37,16 @@ class FakeSecureStorageService implements SecureStorageService {
   @override
   Future<void> clearTokens() async {
     _memStorage.clear();
+  }
+
+  @override
+  Future<void> saveParsedCvData(String stageId, String dataJson) async {
+    _memStorage['parsed_cv_$stageId'] = dataJson;
+  }
+
+  @override
+  Future<String?> getParsedCvData(String stageId) async {
+    return _memStorage['parsed_cv_$stageId'];
   }
 }
 
@@ -145,6 +158,21 @@ class FakeAuthRemoteDataSource implements AuthRemoteDataSource {
       }
     });
   }
+
+  @override
+  Future<UserProfileClaimDto> getProfile() async {
+    return UserProfileClaimDto.fromJson({
+      'success': true,
+      'message': 'Profile retrieved successfully',
+      'data': {
+        'sub': '65f123456789abcdefabcdef',
+        'email': 'candidate@example.com',
+        'role': 'candidate',
+        'iat': 1780304000,
+        'exp': 1780390400
+      }
+    });
+  }
 }
 
 void main() {
@@ -152,6 +180,7 @@ void main() {
     late FakeAuthRemoteDataSource fakeDs;
     late FakeSecureStorageService fakeStorage;
     late AuthRepositoryImpl repository;
+    late GetProfileUseCase getProfileUseCase;
 
     setUp(() {
       fakeDs = FakeAuthRemoteDataSource();
@@ -160,6 +189,7 @@ void main() {
         remoteDataSource: fakeDs,
         secureStorageService: fakeStorage,
       );
+      getProfileUseCase = GetProfileUseCase(repository);
     });
 
     test('register saves access and refresh tokens and returns mapped User entity', () async {
@@ -223,6 +253,26 @@ void main() {
 
       expect(await fakeStorage.getAccessToken(), 'oauth-access-token');
       expect(await fakeStorage.getRefreshToken(), 'oauth-refresh-token');
+    });
+
+    test('getProfile returns mapped UserProfileClaim entity', () async {
+      final UserProfileClaim profile = await repository.getProfile();
+
+      expect(profile.sub, '65f123456789abcdefabcdef');
+      expect(profile.email, 'candidate@example.com');
+      expect(profile.role, 'candidate');
+      expect(profile.iat, 1780304000);
+      expect(profile.exp, 1780390400);
+    });
+
+    test('GetProfileUseCase calls repository.getProfile() and returns claims', () async {
+      final UserProfileClaim profile = await getProfileUseCase();
+
+      expect(profile.sub, '65f123456789abcdefabcdef');
+      expect(profile.email, 'candidate@example.com');
+      expect(profile.role, 'candidate');
+      expect(profile.iat, 1780304000);
+      expect(profile.exp, 1780390400);
     });
   });
 }

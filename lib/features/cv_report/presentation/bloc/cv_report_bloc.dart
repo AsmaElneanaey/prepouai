@@ -20,6 +20,7 @@ class CvReportBloc extends Bloc<CvReportEvent, CvReportState> {
       final report = await _getCvReport(
         cvFileName: event.cvFileName,
         fileSizeBytes: event.fileSizeBytes,
+        stageId: event.stageId,
       );
       emit(CvReportLoaded(report));
     } catch (e) {

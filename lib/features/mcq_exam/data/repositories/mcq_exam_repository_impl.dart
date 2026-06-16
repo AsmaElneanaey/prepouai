@@ -22,8 +22,9 @@ class McqExamRepositoryImpl implements McqExamRepository {
     final model = McqExamModel(
       questions: response.questions,
       durationSeconds: response.durationSeconds,
+      stageId: response.stageId,
     );
-    return model.toEntity();
+    return model.toEntity(id);
   }
 
   @override

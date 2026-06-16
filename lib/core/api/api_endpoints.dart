@@ -4,6 +4,7 @@ class ApiEndpoints {
   static const String register = '/api/v1/auth/register';
   static const String login = '/api/v1/auth/login';
   static const String refresh = '/api/v1/auth/refresh';
+  static const String profile = '/api/v1/auth/profile';
   static const String oauthCallback = '/api/v1/auth/oauth-callback';
   static const String createSession = '/api/v1/sessions';
   static const String pipelineStages = '/api/v1/pipeline-stages/session';
@@ -16,4 +17,6 @@ class ApiEndpoints {
   static const String hrInterviewStage = '/api/v1/hr-interview-stage';
   static const String techInterviewStage = '/api/v1/tech-interview-stage';
   static const String finalReportStage = '/api/v1/final-report-stage';
+  static const String purchaseCredits = '/api/v1/credit-transactions/purchase';
+  static const String creditTransactions = '/api/v1/credit-transactions';
 }

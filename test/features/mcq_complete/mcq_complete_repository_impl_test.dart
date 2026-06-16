@@ -11,9 +11,11 @@ void main() {
 
   McqExamSession buildSession() {
     return McqExamSession(
+      stageId: 'stage-123',
       durationSeconds: 1200,
       questions: const [
         McqQuestion(
+          id: 'q-1',
           index: 1,
           category: 'React',
           difficulty: McqDifficulty.medium,
@@ -23,6 +25,7 @@ void main() {
           explanation: 'e1',
         ),
         McqQuestion(
+          id: 'q-2',
           index: 2,
           category: 'TypeScript',
           difficulty: McqDifficulty.medium,
@@ -32,6 +35,7 @@ void main() {
           explanation: 'e2',
         ),
         McqQuestion(
+          id: 'q-3',
           index: 3,
           category: 'Algorithms',
           difficulty: McqDifficulty.medium,
@@ -41,6 +45,7 @@ void main() {
           explanation: 'e3',
         ),
         McqQuestion(
+          id: 'q-4',
           index: 4,
           category: 'System Design',
           difficulty: McqDifficulty.hard,
@@ -50,6 +55,7 @@ void main() {
           explanation: 'e4',
         ),
         McqQuestion(
+          id: 'q-5',
           index: 5,
           category: 'JavaScript',
           difficulty: McqDifficulty.easy,

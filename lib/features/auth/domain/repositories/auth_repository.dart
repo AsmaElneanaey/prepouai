@@ -1,4 +1,5 @@
 import '../entities/user.dart';
+import '../entities/user_profile_claim.dart';
 
 abstract class AuthRepository {
   Future<User> register({
@@ -15,4 +16,5 @@ abstract class AuthRepository {
 
   Future<User> refreshToken(String refreshToken);
   Future<User> oauthCallback(Map<String, dynamic> oauthData);
+  Future<UserProfileClaim> getProfile();
 }

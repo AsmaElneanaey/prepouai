@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../features/auth/domain/entities/user.dart';
 
 class CoachCard extends StatelessWidget {
   const CoachCard({super.key});
@@ -25,10 +26,18 @@ class CoachCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'Ready to land your\ndream job, Alex?',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+          ValueListenableBuilder<User?>(
+            valueListenable: currentUser,
+            builder: (context, user, _) {
+              final name = user != null && user.firstName.isNotEmpty
+                  ? user.firstName
+                  : 'Alex';
+              return Text(
+                'Ready to land your\ndream job, $name?',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+              );
+            },
           ),
           const SizedBox(height: 8),
           const Text(

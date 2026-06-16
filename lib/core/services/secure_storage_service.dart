@@ -26,6 +26,14 @@ class SecureStorageService {
     return await _storage.read(key: _refreshTokenKey);
   }
 
+  Future<void> saveParsedCvData(String stageId, String dataJson) async {
+    await _storage.write(key: 'parsed_cv_$stageId', value: dataJson);
+  }
+
+  Future<String?> getParsedCvData(String stageId) async {
+    return await _storage.read(key: 'parsed_cv_$stageId');
+  }
+
   Future<void> clearTokens() async {
     await _storage.delete(key: _accessTokenKey);
     await _storage.delete(key: _refreshTokenKey);

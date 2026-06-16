@@ -19,6 +19,7 @@ class FakeCvReportRemoteDataSource implements CvReportRemoteDataSource {
   Future<CvReportModel> fetchCvReport({
     String? cvFileName,
     int? fileSizeBytes,
+    String? stageId,
   }) async {
     if (!shouldSucceed) {
       throw Exception('Server error');
@@ -62,7 +63,10 @@ class FakeCvReportRemoteDataSource implements CvReportRemoteDataSource {
   }
 
   @override
-  Future<CvUploadResponseDto> uploadCv(String filePath) async {
+  Future<CvUploadResponseDto> uploadCv({
+    required String stageId,
+    required String filePath,
+  }) async {
     if (!shouldSucceed) {
       throw Exception('Server error');
     }
@@ -141,7 +145,10 @@ void main() {
       final repository = CvReportRepositoryImpl(fakeDs);
       final useCase = UploadCvUseCase(repository);
 
-      final CvUploadResponse response = await useCase('path/to/resume.pdf');
+      final CvUploadResponse response = await useCase(
+        stageId: 'stage-123',
+        filePath: 'path/to/resume.pdf',
+      );
 
       expect(response.id, 'cv-id-12345');
       expect(response.fileName, 'resume.pdf');
@@ -173,6 +180,24 @@ void main() {
       expect(skills.first.name, 'NestJS');
       expect(skills.first.category, 'Backend');
       expect(skills.first.description, 'A progressive Node.js framework.');
+    });
+
+    test('CvSkillsResponseDto parses plain string list correctly', () async {
+      final dto = CvSkillsResponseDto.fromJson({
+        'success': true,
+        'message': 'CV extracted skills fetched successfully',
+        'data': ['React', 'TypeScript', 'Node.js', 'NestJS']
+      });
+
+      expect(dto.skills, hasLength(4));
+      expect(dto.skills[0].id, 'React');
+      expect(dto.skills[0].name, 'React');
+      expect(dto.skills[1].id, 'TypeScript');
+      expect(dto.skills[1].name, 'TypeScript');
+      expect(dto.skills[2].id, 'Node.js');
+      expect(dto.skills[2].name, 'Node.js');
+      expect(dto.skills[3].id, 'NestJS');
+      expect(dto.skills[3].name, 'NestJS');
     });
   });
 }

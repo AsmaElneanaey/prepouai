@@ -28,7 +28,8 @@ class _SignupScreenState extends State<SignupScreen> {
     'https://api.dicebear.com/7.x/bottts/png?seed=Buster&backgroundColor=0f1419,7b2cb7',
   ];
 
-  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
 
   Future<void> _pickProfilePicture() async {
     try {
@@ -51,7 +52,8 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     super.dispose();
   }
 
@@ -284,30 +286,72 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    // Full Name
-                    const Text(
-                      'Full Name',
-                      style: TextStyle(
-                        color: Color(0xFF6B7687),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _nameController,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: const Color(0xFF10141B),
-                        hintText: 'John Doe',
-                        hintStyle: const TextStyle(color: Color(0xFF6B7687)),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide.none,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'First Name',
+                                style: TextStyle(
+                                  color: Color(0xFF6B7687),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextField(
+                                controller: _firstNameController,
+                                style: const TextStyle(color: Colors.white),
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: const Color(0xFF10141B),
+                                  hintText: 'John',
+                                  hintStyle: const TextStyle(color: Color(0xFF6B7687)),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                      ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Last Name',
+                                style: TextStyle(
+                                  color: Color(0xFF6B7687),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextField(
+                                controller: _lastNameController,
+                                style: const TextStyle(color: Colors.white),
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: const Color(0xFF10141B),
+                                  hintText: 'Doe',
+                                  hintStyle: const TextStyle(color: Color(0xFF6B7687)),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 18),
                     // Email
@@ -422,17 +466,16 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                         onPressed: () {
                           // Save state
-                          final name = _nameController.text.trim();
-                          final parts = name.split(' ');
-                          final firstName = parts.isNotEmpty ? parts.first : 'A';
+                          final firstName = _firstNameController.text.trim();
+                          final lastName = _lastNameController.text.trim();
                           
                           userProfileImageBytes.value = _selectedProfileBytes;
                           userPresetAvatar.value = _selectedPresetAvatarUrl;
                           currentUser.value = User(
                             id: 'mock_id',
                             email: 'user@example.com',
-                            firstName: firstName,
-                            lastName: parts.length > 1 ? parts.sublist(1).join(' ') : ' ',
+                            firstName: firstName.isNotEmpty ? firstName : 'A',
+                            lastName: lastName.isNotEmpty ? lastName : ' ',
                             role: 'candidate',
                             totalCredits: 10,
                             currentStreakDays: 1,

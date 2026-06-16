@@ -38,7 +38,8 @@ class _AuthScreenState extends State<AuthScreen> {
   // Form controllers
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
@@ -63,7 +64,8 @@ class _AuthScreenState extends State<AuthScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
@@ -446,19 +448,21 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Future<void> _signUp() async {
-    final name = _nameController.text.trim();
+    final firstName = _firstNameController.text.trim();
+    final lastName = _lastNameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
 
-    if (name.isEmpty) {
-      _showErrorSnackBar('Please enter your full name');
+    if (firstName.isEmpty) {
+      _showErrorSnackBar('Please enter your first name');
       return;
     }
 
-    final parts = name.split(' ');
-    final firstName = parts.first;
-    final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : ' ';
+    if (lastName.isEmpty) {
+      _showErrorSnackBar('Please enter your last name');
+      return;
+    }
 
     if (email.isEmpty) {
       _showErrorSnackBar('Please enter your email address');
@@ -683,33 +687,78 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
         ),
         const SizedBox(height: 24),
-        // Full Name
-        const Text(
-          'Full Name',
-          style: TextStyle(
-            color: Color(0xFF6B7687),
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _nameController,
-          style: const TextStyle(color: Colors.white),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: const Color(0xFF10141B),
-            hintText: 'John Doe',
-            hintStyle: const TextStyle(color: Color(0xFF6B7687)),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide.none,
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'First Name',
+                    style: TextStyle(
+                      color: Color(0xFF6B7687),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _firstNameController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: const Color(0xFF10141B),
+                      hintText: 'John',
+                      hintStyle: const TextStyle(color: Color(0xFF6B7687)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: 16,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            contentPadding: const EdgeInsets.symmetric(
-              vertical: 16,
-              horizontal: 16,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Last Name',
+                    style: TextStyle(
+                      color: Color(0xFF6B7687),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _lastNameController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: const Color(0xFF10141B),
+                      hintText: 'Doe',
+                      hintStyle: const TextStyle(color: Color(0xFF6B7687)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: 16,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+          ],
         ),
         const SizedBox(height: 18),
         // Email

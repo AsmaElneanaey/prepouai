@@ -2,14 +2,19 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../mcq_complete/domain/usecases/calculate_mcq_result.dart';
 import '../../domain/usecases/get_mcq_exam.dart';
+import '../../domain/usecases/submit_mcq_answer_use_case.dart';
+import '../../domain/usecases/complete_mcq_stage_use_case.dart';
+import '../../../mcq_complete/domain/entities/mcq_complete_result.dart';
 import 'mcq_exam_event.dart';
 import 'mcq_exam_state.dart';
 
 class McqExamBloc extends Bloc<McqExamEvent, McqExamState> {
-  McqExamBloc(this._getMcqExam, this._calculateMcqResult)
-      : super(const McqExamInitial()) {
+  McqExamBloc(
+    this._getMcqExam,
+    this._submitAnswer,
+    this._completeMcqStage,
+  ) : super(const McqExamInitial()) {
     on<McqExamRequested>(_onRequested);
     on<McqAnswerSelected>(_onAnswerSelected);
     on<McqNextPressed>(_onNext);
@@ -19,7 +24,8 @@ class McqExamBloc extends Bloc<McqExamEvent, McqExamState> {
   }
 
   final GetMcqExamUseCase _getMcqExam;
-  final CalculateMcqResultUseCase _calculateMcqResult;
+  final SubmitMcqAnswerUseCase _submitAnswer;
+  final CompleteMcqStageUseCase _completeMcqStage;
   Timer? _timer;
 
   Future<void> _onRequested(
@@ -36,6 +42,7 @@ class McqExamBloc extends Bloc<McqExamEvent, McqExamState> {
           selectedAnswers: const {},
           revealedIndices: const {},
           remainingSeconds: session.durationSeconds,
+          correctOptionIds: const {},
         ),
       );
       _startTimer();
@@ -44,25 +51,45 @@ class McqExamBloc extends Bloc<McqExamEvent, McqExamState> {
     }
   }
 
-  void _onAnswerSelected(
+  Future<void> _onAnswerSelected(
     McqAnswerSelected event,
     Emitter<McqExamState> emit,
-  ) {
+  ) async {
     final current = state;
     if (current is! McqExamInProgress) return;
     if (current.isFeedbackVisible) return;
 
-    final updatedAnswers = Map<int, String>.from(current.selectedAnswers)
-      ..[current.currentIndex] = event.optionId;
-    final updatedRevealed = Set<int>.from(current.revealedIndices)
-      ..add(current.currentIndex);
+    try {
+      final question = current.currentQuestion;
+      
+      // Call real submit API
+      final answerResponse = await _submitAnswer(
+        id: current.session.stageId,
+        questionId: question.id,
+        selectedOptionIndex: int.parse(event.optionId),
+        timeSpentSeconds: 15, // standard default fallback
+      );
 
-    emit(
-      current.copyWith(
-        selectedAnswers: updatedAnswers,
-        revealedIndices: updatedRevealed,
-      ),
-    );
+      final correctIndex = answerResponse.correctOptionIndex ?? 0;
+      final correctOptionId = correctIndex.toString();
+
+      final updatedAnswers = Map<int, String>.from(current.selectedAnswers)
+        ..[current.currentIndex] = event.optionId;
+      final updatedRevealed = Set<int>.from(current.revealedIndices)
+        ..add(current.currentIndex);
+      final updatedCorrectOptionIds = Map<int, String>.from(current.correctOptionIds)
+        ..[current.currentIndex] = correctOptionId;
+
+      emit(
+        current.copyWith(
+          selectedAnswers: updatedAnswers,
+          revealedIndices: updatedRevealed,
+          correctOptionIds: updatedCorrectOptionIds,
+        ),
+      );
+    } catch (e) {
+      emit(McqExamError(e.toString()));
+    }
   }
 
   void _onNext(McqNextPressed event, Emitter<McqExamState> emit) {
@@ -77,16 +104,28 @@ class McqExamBloc extends Bloc<McqExamEvent, McqExamState> {
     emit(current.copyWith(currentIndex: current.currentIndex - 1));
   }
 
-  void _onFinish(McqFinishPressed event, Emitter<McqExamState> emit) {
+  Future<void> _onFinish(McqFinishPressed event, Emitter<McqExamState> emit) async {
     final current = state;
     if (current is! McqExamInProgress || !current.canFinish) return;
 
     _timer?.cancel();
-    final result = _calculateMcqResult(
-      session: current.session,
-      selectedAnswers: current.selectedAnswers,
-    );
-    emit(McqExamFinished(examState: current, result: result));
+    emit(const McqExamLoading());
+    try {
+      // Complete stage on server
+      final completeResponse = await _completeMcqStage(current.session.stageId);
+      
+      final result = McqCompleteResult(
+        scorePercent: completeResponse.scorePercent,
+        isPass: completeResponse.scorePercent >= 60,
+        correctCount: completeResponse.correctCount,
+        totalCount: completeResponse.totalQuestions,
+        topics: const [],
+      );
+      
+      emit(McqExamFinished(examState: current, result: result));
+    } catch (e) {
+      emit(McqExamError(e.toString()));
+    }
   }
 
   void _onTimerTicked(McqTimerTicked event, Emitter<McqExamState> emit) {

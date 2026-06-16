@@ -1,5 +1,6 @@
 import '../../../../core/services/secure_storage_service.dart';
 import '../../domain/entities/user.dart';
+import '../../domain/entities/user_profile_claim.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_data_source.dart';
 import '../models/register_request_dto.dart';
@@ -77,5 +78,11 @@ class AuthRepositoryImpl implements AuthRepository {
     await _secureStorageService.saveRefreshToken(response.refreshToken);
 
     return response.user.toEntity();
+  }
+
+  @override
+  Future<UserProfileClaim> getProfile() async {
+    final response = await _remoteDataSource.getProfile();
+    return response.toEntity();
   }
 }

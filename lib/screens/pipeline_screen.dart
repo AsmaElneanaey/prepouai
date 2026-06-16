@@ -9,6 +9,11 @@ import '../core/services/secure_storage_service.dart';
 import '../features/interview_session/data/datasources/session_remote_data_source.dart';
 import '../features/interview_session/data/repositories/session_repository_impl.dart';
 import '../features/interview_session/domain/usecases/create_session_use_case.dart';
+import '../features/interview_session/domain/usecases/get_user_sessions_use_case.dart';
+import '../features/cv_report/domain/usecases/upload_cv_use_case.dart';
+import '../features/cv_report/domain/usecases/parse_cv_use_case.dart';
+import '../features/cv_report/data/datasources/cv_report_remote_data_source.dart';
+import '../features/cv_report/data/repositories/cv_report_repository_impl.dart';
 import '../core/widgets/user_avatar.dart';
 
 
@@ -29,7 +34,11 @@ class _PipelineScreenState extends State<PipelineScreen> {
   PlatformFile? _pickedFile;
 
   bool _isCreatingSession = false;
+  bool _isAnalyzing = false;
   late final CreateSessionUseCase _createSessionUseCase;
+  late final GetUserSessionsUseCase _getUserSessionsUseCase;
+  late final UploadCvUseCase _uploadCvUseCase;
+  late final ParseCvUseCase _parseCvUseCase;
 
   @override
   void initState() {
@@ -39,9 +48,16 @@ class _PipelineScreenState extends State<PipelineScreen> {
 
     final secureStorageService = SecureStorageService();
     final dioClient = DioClient(secureStorageService);
+
     final remoteDataSource = SessionRemoteDataSourceImpl(dioClient.dio);
     final repository = SessionRepositoryImpl(remoteDataSource);
     _createSessionUseCase = CreateSessionUseCase(repository);
+    _getUserSessionsUseCase = GetUserSessionsUseCase(repository);
+
+    final cvRemoteDataSource = CvReportRemoteDataSourceImpl(dioClient.dio, secureStorageService);
+    final cvRepository = CvReportRepositoryImpl(cvRemoteDataSource);
+    _uploadCvUseCase = UploadCvUseCase(cvRepository);
+    _parseCvUseCase = ParseCvUseCase(cvRepository);
   }
 
   String _getCompanyId(String companyName) {
@@ -470,24 +486,20 @@ class _PipelineScreenState extends State<PipelineScreen> {
                               backgroundColor: const Color(0xFF00D9A3),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
-                            onPressed: () {
-                              if (_pickedFile == null) {
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please upload a CV first')));
-                                return;
-                              }
-                              Navigator.pushNamed(
-                                context,
-                                '/cv-report',
-                                arguments: {
-                                  'fileName': _pickedFile!.name,
-                                  'fileSize': _pickedFile!.size,
-                                },
-                              );
-                            },
-                            child: const Text(
-                              'Analyze With AI',
-                              style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
+                            onPressed: _isAnalyzing ? null : _analyzeCv,
+                            child: _isAnalyzing
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.black,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Analyze With AI',
+                                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16),
+                                  ),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -729,6 +741,96 @@ class _PipelineScreenState extends State<PipelineScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error picking file: $e')));
+    }
+  }
+
+  Future<void> _analyzeCv() async {
+    if (_pickedFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a CV first')),
+      );
+      return;
+    }
+
+    if (_pickedFile!.path == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not read the file path from your device.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isAnalyzing = true;
+    });
+
+    try {
+      final sessions = await _getUserSessionsUseCase();
+      if (sessions.isEmpty) {
+        throw Exception('No active sessions found. Please set up a pipeline first.');
+      }
+
+      final latestSession = sessions.first;
+      final cvStage = latestSession.stages.firstWhere(
+        (s) => s.stageType == 'cv_upload',
+        orElse: () => throw Exception('Could not find the CV Upload stage inside the session.'),
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Uploading CV to server...')),
+        );
+      }
+
+      await _uploadCvUseCase(
+        stageId: cvStage.id,
+        filePath: _pickedFile!.path!,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('CV uploaded! Executing AI Gemini parsing round...')),
+        );
+      }
+
+      await _parseCvUseCase(cvStage.id);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Parsing successful! Loading report...'),
+            backgroundColor: Color(0xFF00D9A3),
+          ),
+        );
+
+        Navigator.pushNamed(
+          context,
+          '/cv-report',
+          arguments: {
+            'fileName': _pickedFile!.name,
+            'fileSize': _pickedFile!.size,
+            'stageId': cvStage.id,
+          },
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        var errorMsg = e.toString();
+        if (errorMsg.startsWith('Exception: ')) {
+          errorMsg = errorMsg.replaceFirst('Exception: ', '');
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed CV upload/parse: $errorMsg'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAnalyzing = false;
+        });
+      }
     }
   }
 

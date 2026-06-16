@@ -1,55 +1,38 @@
 import 'package:dio/dio.dart';
 import '../../../../core/api/api_endpoints.dart';
-import '../models/question_model.dart';
+import '../models/get_transactions_response_dto.dart';
+import '../models/purchase_response_dto.dart';
 
-abstract class QuestionsRemoteDataSource {
-  Future<CreateQuestionResponseDto> createQuestion({
-    required String questionText,
-    required List<String> options,
-    required int correctOptionIndex,
-    required String category,
-    required String difficulty,
-    required List<String> tags,
-    required bool isAiGenerated,
-    required int estimatedTimeSec,
+abstract class CreditsRemoteDataSource {
+  Future<PurchaseResponseDto> purchaseCredits({
+    required int amount,
+    required String stripePaymentId,
   });
 
-  Future<GetQuestionsResponseDto> getQuestions();
+  Future<GetTransactionsResponseDto> getCreditTransactions();
 }
 
-class QuestionsRemoteDataSourceImpl implements QuestionsRemoteDataSource {
-  QuestionsRemoteDataSourceImpl(this._dio);
+class CreditsRemoteDataSourceImpl implements CreditsRemoteDataSource {
+  CreditsRemoteDataSourceImpl(this._dio);
 
   final Dio _dio;
 
   @override
-  Future<CreateQuestionResponseDto> createQuestion({
-    required String questionText,
-    required List<String> options,
-    required int correctOptionIndex,
-    required String category,
-    required String difficulty,
-    required List<String> tags,
-    required bool isAiGenerated,
-    required int estimatedTimeSec,
+  Future<PurchaseResponseDto> purchaseCredits({
+    required int amount,
+    required String stripePaymentId,
   }) async {
     try {
       final response = await _dio.post(
-        ApiEndpoints.questions,
+        ApiEndpoints.purchaseCredits,
         data: {
-          'question_text': questionText,
-          'options': options,
-          'correct_option_index': correctOptionIndex,
-          'category': category,
-          'difficulty': difficulty,
-          'tags': tags,
-          'is_ai_generated': isAiGenerated,
-          'estimated_time_sec': estimatedTimeSec,
+          'amount': amount,
+          'stripe_payment_id': stripePaymentId,
         },
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return CreateQuestionResponseDto.fromJson(
+        return PurchaseResponseDto.fromJson(
           response.data as Map<String, dynamic>,
         );
       } else {
@@ -68,12 +51,12 @@ class QuestionsRemoteDataSourceImpl implements QuestionsRemoteDataSource {
   }
 
   @override
-  Future<GetQuestionsResponseDto> getQuestions() async {
+  Future<GetTransactionsResponseDto> getCreditTransactions() async {
     try {
-      final response = await _dio.get(ApiEndpoints.questions);
+      final response = await _dio.get(ApiEndpoints.creditTransactions);
 
       if (response.statusCode == 200) {
-        return GetQuestionsResponseDto.fromJson(
+        return GetTransactionsResponseDto.fromJson(
           response.data as Map<String, dynamic>,
         );
       } else {

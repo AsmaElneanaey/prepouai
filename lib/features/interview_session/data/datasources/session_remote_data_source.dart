@@ -40,6 +40,7 @@ class SessionRemoteDataSourceImpl implements SessionRemoteDataSource {
       final response = await _dio.post(
         ApiEndpoints.createSession,
         data: {
+          'title': '$seniorityLevel $targetRole Interview',
           'target_role': targetRole,
           'seniority_level': seniorityLevel,
           'target_company_id': targetCompanyId,
@@ -208,6 +209,11 @@ class SessionRemoteDataSourceImpl implements SessionRemoteDataSource {
           return message.join(', ');
         } else if (message is String) {
           return message;
+        }
+        
+        final error = data['error'];
+        if (error is Map<String, dynamic> && error['message'] is String) {
+          return error['message'] as String;
         }
       }
     }

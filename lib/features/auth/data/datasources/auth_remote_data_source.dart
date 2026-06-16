@@ -4,12 +4,14 @@ import '../models/register_request_dto.dart';
 import '../models/register_response_dto.dart';
 import '../models/login_request_dto.dart';
 import '../models/login_response_dto.dart';
+import '../models/user_profile_claim_dto.dart';
 
 abstract class AuthRemoteDataSource {
   Future<RegisterResponseDto> register(RegisterRequestDto request);
   Future<LoginResponseDto> login(LoginRequestDto request);
   Future<LoginResponseDto> refreshToken(String refreshToken);
   Future<LoginResponseDto> oauthCallback(Map<String, dynamic> oauthData);
+  Future<UserProfileClaimDto> getProfile();
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -117,6 +119,30 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     }
   }
 
+  @override
+  Future<UserProfileClaimDto> getProfile() async {
+    try {
+      final response = await _dio.get(
+        ApiEndpoints.profile,
+      );
+
+      if (response.statusCode == 200) {
+        return UserProfileClaimDto.fromJson(response.data as Map<String, dynamic>);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+        );
+      }
+    } on DioException catch (e) {
+      final message = _parseErrorMessage(e);
+      throw Exception(message);
+    } catch (e) {
+      throw Exception('An unexpected error occurred: $e');
+    }
+  }
+
   String _parseErrorMessage(DioException e) {
     if (e.response != null && e.response!.data != null) {
       final data = e.response!.data;
@@ -126,6 +152,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           return message.join(', ');
         } else if (message is String) {
           return message;
+        }
+        
+        final error = data['error'];
+        if (error is Map<String, dynamic> && error['message'] is String) {
+          return error['message'] as String;
         }
       }
     }

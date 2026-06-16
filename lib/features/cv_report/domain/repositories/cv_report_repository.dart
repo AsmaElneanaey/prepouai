@@ -7,9 +7,13 @@ abstract class CvReportRepository {
   Future<CvReport> getCvReport({
     String? cvFileName,
     int? fileSizeBytes,
+    String? stageId,
   });
 
-  Future<CvUploadResponse> uploadCv(String filePath);
+  Future<CvUploadResponse> uploadCv({
+    required String stageId,
+    required String filePath,
+  });
 
   Future<CvParseResponse> parseCv(String id);
 

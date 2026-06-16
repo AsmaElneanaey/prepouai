@@ -12,7 +12,7 @@ class CvUploadResponseModel {
 
   factory CvUploadResponseModel.fromJson(Map<String, dynamic> json) {
     return CvUploadResponseModel(
-      id: json['_id'] as String? ?? json['id'] as String? ?? '',
+      id: json['_id'] as String? ?? json['id'] as String? ?? json['stage_id'] as String? ?? '',
       fileName: json['fileName'] as String? ?? json['file_name'] as String? ?? '',
       fileSize: json['fileSize'] as int? ?? json['file_size'] as int? ?? 0,
       status: json['status'] as String? ?? '',
@@ -62,10 +62,14 @@ class CvParseResponseModel {
   });
 
   factory CvParseResponseModel.fromJson(Map<String, dynamic> json) {
+    final statusVal = json['status'] as String? ?? '';
+    final isParsedVal = json['isParsed'] as bool? ??
+        json['is_parsed'] as bool? ??
+        (statusVal == 'completed' || statusVal == 'parsed');
     return CvParseResponseModel(
-      id: json['_id'] as String? ?? json['id'] as String? ?? '',
-      isParsed: json['isParsed'] as bool? ?? json['is_parsed'] as bool? ?? false,
-      status: json['status'] as String? ?? '',
+      id: json['_id'] as String? ?? json['id'] as String? ?? json['stage_id'] as String? ?? '',
+      isParsed: isParsedVal,
+      status: statusVal,
     );
   }
 
@@ -111,12 +115,25 @@ class CvSkillsResponseDto {
 
   factory CvSkillsResponseDto.fromJson(Map<String, dynamic> json) {
     final list = json['data'] as List<dynamic>? ?? const [];
+    final skills = list.map((e) {
+      if (e is String) {
+        return SkillModel(
+          id: e,
+          name: e,
+          category: '',
+          description: '',
+        );
+      } else if (e is Map<String, dynamic>) {
+        return SkillModel.fromJson(e);
+      } else {
+        return const SkillModel(id: '', name: '', category: '', description: '');
+      }
+    }).toList();
+
     return CvSkillsResponseDto(
       success: json['success'] as bool? ?? false,
       message: json['message'] as String? ?? '',
-      skills: list
-          .map((e) => SkillModel.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      skills: skills,
     );
   }
 

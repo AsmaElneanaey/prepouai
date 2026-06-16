@@ -5,13 +5,13 @@ import '../../../../core/widgets/app_bottom_nav.dart';
 import '../../../../core/widgets/prepyou_app_bar.dart';
 import '../../../../core/api/dio_client.dart';
 import '../../../../core/services/secure_storage_service.dart';
-import '../../../mcq_complete/data/repositories/mcq_complete_repository_impl.dart';
-import '../../../mcq_complete/domain/usecases/calculate_mcq_result.dart';
 import '../../../mcq_complete/presentation/widgets/mcq_complete_sheet.dart';
 import '../../data/datasources/mcq_exam_remote_data_source.dart';
 import '../../data/repositories/mcq_exam_repository_impl.dart';
 import '../../domain/entities/mcq_option.dart';
 import '../../domain/usecases/get_mcq_exam.dart';
+import '../../domain/usecases/submit_mcq_answer_use_case.dart';
+import '../../domain/usecases/complete_mcq_stage_use_case.dart';
 import '../bloc/mcq_exam_bloc.dart';
 import '../bloc/mcq_exam_event.dart';
 import '../bloc/mcq_exam_state.dart';
@@ -31,9 +31,9 @@ class McqExamPage extends StatelessWidget {
     final examDataSource = McqExamRemoteDataSourceImpl(dioClient.dio);
     final examRepository = McqExamRepositoryImpl(examDataSource);
     final getMcqExam = GetMcqExamUseCase(examRepository);
-    final calculateResult =
-        CalculateMcqResultUseCase(McqCompleteRepositoryImpl());
-    return McqExamBloc(getMcqExam, calculateResult);
+    final submitAnswer = SubmitMcqAnswerUseCase(examRepository);
+    final completeMcqStage = CompleteMcqStageUseCase(examRepository);
+    return McqExamBloc(getMcqExam, submitAnswer, completeMcqStage);
   }
 
   @override
@@ -58,7 +58,8 @@ class _McqExamView extends StatelessWidget {
           : AnswerOptionVisualState.idle;
     }
 
-    final isCorrect = option.id == state.currentQuestion.correctOptionId;
+    final correctId = state.correctOptionIds[state.currentIndex];
+    final isCorrect = option.id == correctId;
     final isSelected = state.selectedOptionId == option.id;
 
     if (isCorrect && isSelected) {

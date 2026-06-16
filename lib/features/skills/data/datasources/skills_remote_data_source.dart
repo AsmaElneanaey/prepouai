@@ -60,6 +60,11 @@ class SkillsRemoteDataSourceImpl implements SkillsRemoteDataSource {
         } else if (message is String) {
           return message;
         }
+
+        final error = data['error'];
+        if (error is Map<String, dynamic> && error['message'] is String) {
+          return error['message'] as String;
+        }
       }
     }
     return e.message ?? 'An unknown error occurred';

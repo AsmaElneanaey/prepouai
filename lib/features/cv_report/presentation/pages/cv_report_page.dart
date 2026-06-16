@@ -26,7 +26,7 @@ class CvReportPage extends StatelessWidget {
   static CvReportBloc _createBloc() {
     final secureStorageService = SecureStorageService();
     final dioClient = DioClient(secureStorageService);
-    final dataSource = CvReportRemoteDataSourceImpl(dioClient.dio);
+    final dataSource = CvReportRemoteDataSourceImpl(dioClient.dio, secureStorageService);
     final repository = CvReportRepositoryImpl(dataSource);
     final useCase = GetCvReportUseCase(repository);
     return CvReportBloc(useCase);
@@ -38,6 +38,7 @@ class CvReportPage extends StatelessWidget {
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final fileName = args?['fileName'] as String?;
     final fileSizeBytes = args?['fileSize'] as int?;
+    final stageId = args?['stageId'] as String?;
 
     return BlocProvider(
       create: (_) => _createBloc()
@@ -45,6 +46,7 @@ class CvReportPage extends StatelessWidget {
           CvReportRequested(
             cvFileName: fileName,
             fileSizeBytes: fileSizeBytes,
+            stageId: stageId,
           ),
         ),
       child: const _CvReportView(),
@@ -91,6 +93,7 @@ class _CvReportView extends StatelessWidget {
                               CvReportRequested(
                                 cvFileName: args?['fileName'] as String?,
                                 fileSizeBytes: args?['fileSize'] as int?,
+                                stageId: args?['stageId'] as String?,
                               ),
                             );
                       },

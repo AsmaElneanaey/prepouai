@@ -98,8 +98,10 @@ class FakeMcqExamRemoteDataSource implements McqExamRemoteDataSource {
       'success': true,
       'message': 'MCQ stage completed successfully',
       'data': {
-        'score': 80,
-        'badge': 'Strong'
+        'score_pct': 80,
+        'correct_count': 4,
+        'total_questions': 5,
+        'answered_count': 5,
       }
     });
   }
@@ -153,8 +155,10 @@ void main() {
 
       final McqCompleteResponse response = await useCase('session-123');
 
-      expect(response.score, 80);
-      expect(response.badge, 'Strong');
+      expect(response.scorePercent, 80);
+      expect(response.correctCount, 4);
+      expect(response.totalQuestions, 5);
+      expect(response.answeredCount, 5);
     });
   });
 }

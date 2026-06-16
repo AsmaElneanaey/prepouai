@@ -9,10 +9,12 @@ class GetCvReportUseCase {
   Future<CvReport> call({
     String? cvFileName,
     int? fileSizeBytes,
+    String? stageId,
   }) {
     return _repository.getCvReport(
       cvFileName: cvFileName,
       fileSizeBytes: fileSizeBytes,
+      stageId: stageId,
     );
   }
 }

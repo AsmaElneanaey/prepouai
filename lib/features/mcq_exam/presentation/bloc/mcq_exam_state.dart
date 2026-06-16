@@ -25,6 +25,7 @@ class McqExamInProgress extends McqExamState {
     required this.selectedAnswers,
     required this.revealedIndices,
     required this.remainingSeconds,
+    this.correctOptionIds = const {},
   });
 
   final McqExamSession session;
@@ -32,6 +33,7 @@ class McqExamInProgress extends McqExamState {
   final Map<int, String> selectedAnswers;
   final Set<int> revealedIndices;
   final int remainingSeconds;
+  final Map<int, String> correctOptionIds;
 
   McqQuestion get currentQuestion => session.questions[currentIndex];
 
@@ -56,7 +58,8 @@ class McqExamInProgress extends McqExamState {
     if (!isFeedbackVisible) return null;
     final selected = selectedAnswers[currentIndex];
     if (selected == null) return null;
-    return selected == currentQuestion.correctOptionId;
+    final correctId = correctOptionIds[currentIndex];
+    return selected == correctId;
   }
 
   double get progressFraction =>
@@ -73,6 +76,7 @@ class McqExamInProgress extends McqExamState {
     Map<int, String>? selectedAnswers,
     Set<int>? revealedIndices,
     int? remainingSeconds,
+    Map<int, String>? correctOptionIds,
   }) {
     return McqExamInProgress(
       session: session,
@@ -80,6 +84,7 @@ class McqExamInProgress extends McqExamState {
       selectedAnswers: selectedAnswers ?? this.selectedAnswers,
       revealedIndices: revealedIndices ?? this.revealedIndices,
       remainingSeconds: remainingSeconds ?? this.remainingSeconds,
+      correctOptionIds: correctOptionIds ?? this.correctOptionIds,
     );
   }
 
@@ -90,6 +95,7 @@ class McqExamInProgress extends McqExamState {
         selectedAnswers,
         revealedIndices,
         remainingSeconds,
+        correctOptionIds,
       ];
 }
 

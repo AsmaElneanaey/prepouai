@@ -7,15 +7,18 @@ export 'mcq_question.dart';
 
 class McqExamSession extends Equatable {
   const McqExamSession({
+    required this.stageId,
     required this.questions,
     required this.durationSeconds,
   });
 
+  final String stageId;
   final List<McqQuestion> questions;
   final int durationSeconds;
 
   int get totalQuestions => questions.length;
 
   @override
-  List<Object?> get props => [questions, durationSeconds];
+  List<Object?> get props => [stageId, questions, durationSeconds];
 }
+

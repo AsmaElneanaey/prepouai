@@ -14,17 +14,25 @@ class CvReportRepositoryImpl implements CvReportRepository {
   Future<CvReport> getCvReport({
     String? cvFileName,
     int? fileSizeBytes,
+    String? stageId,
   }) async {
     final model = await _remoteDataSource.fetchCvReport(
       cvFileName: cvFileName,
       fileSizeBytes: fileSizeBytes,
+      stageId: stageId,
     );
     return model.toEntity();
   }
 
   @override
-  Future<CvUploadResponse> uploadCv(String filePath) async {
-    final dto = await _remoteDataSource.uploadCv(filePath);
+  Future<CvUploadResponse> uploadCv({
+    required String stageId,
+    required String filePath,
+  }) async {
+    final dto = await _remoteDataSource.uploadCv(
+      stageId: stageId,
+      filePath: filePath,
+    );
     return dto.data.toEntity();
   }
 

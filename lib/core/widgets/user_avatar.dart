@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
-import '../../features/cv_report/presentation/theme/cv_report_theme.dart';
 import '../../features/auth/domain/entities/user.dart';
 
-
 class UserAvatar extends StatelessWidget {
-  const UserAvatar({
-    super.key,
-    this.size = 32.0,
-  });
+  const UserAvatar({super.key, this.size = 32.0});
 
   final double size;
 
@@ -53,7 +48,8 @@ class UserAvatar extends StatelessWidget {
                         width: size,
                         height: size,
                         fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => _buildInitialsFallback(user, size),
+                        errorBuilder: (context, error, stackTrace) =>
+                            _buildInitialsFallback(user, size),
                         loadingBuilder: (context, child, loadingProgress) {
                           if (loadingProgress == null) return child;
                           return SizedBox(

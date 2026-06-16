@@ -6,6 +6,7 @@ enum McqDifficulty { easy, medium, hard }
 
 class McqQuestion extends Equatable {
   const McqQuestion({
+    required this.id,
     required this.index,
     required this.category,
     required this.difficulty,
@@ -15,6 +16,7 @@ class McqQuestion extends Equatable {
     required this.explanation,
   });
 
+  final String id;
   final int index;
   final String category;
   final McqDifficulty difficulty;
@@ -25,6 +27,7 @@ class McqQuestion extends Equatable {
 
   @override
   List<Object?> get props => [
+        id,
         index,
         category,
         difficulty,
@@ -34,3 +37,4 @@ class McqQuestion extends Equatable {
         explanation,
       ];
 }
+
